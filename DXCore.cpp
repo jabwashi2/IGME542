@@ -621,6 +621,8 @@ void DXCore::UpdateTitleBarStats()
 	// Append the version of Direct3D the app is using
 	switch (dxFeatureLevel)
 	{
+	case D3D_FEATURE_LEVEL_12_1: output << " DX 12.1"; break; // New!
+	case D3D_FEATURE_LEVEL_12_0: output << " DX 12.0"; break; // New!
 	case D3D_FEATURE_LEVEL_11_1: output << "    D3D 11.1"; break;
 	case D3D_FEATURE_LEVEL_11_0: output << "    D3D 11.0"; break;
 	case D3D_FEATURE_LEVEL_10_1: output << "    D3D 10.1"; break;
