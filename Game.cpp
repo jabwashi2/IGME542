@@ -248,6 +248,10 @@ void Game::CreateGeometry()
 	}
 }
 
+void Game::CreateRootSigAndPipelineState()
+{
+}
+
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size.
