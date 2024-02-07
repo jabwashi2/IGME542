@@ -143,7 +143,7 @@ void Game::CreateRootSigAndPipelineState()
 	}
 
 	// Input layout
-	const unsigned int inputElementCount = 2;
+	const unsigned int inputElementCount = 4;
 	D3D12_INPUT_ELEMENT_DESC inputElements[inputElementCount] = {};
 	{
 		// Create an input layout that describes the vertex format
@@ -156,11 +156,23 @@ void Game::CreateRootSigAndPipelineState()
 		inputElements[0].SemanticName = "POSITION";
 		inputElements[0].SemanticIndex = 0;
 
-		// Set up the second element - a color, which is 4 more float values
+		// Set up the second element - UV
 		inputElements[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		inputElements[1].SemanticName = "COLOR";
+		inputElements[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+		inputElements[1].SemanticName = "TEXTCOORD";
 		inputElements[1].SemanticIndex = 0;
+
+		// Set up the third element - NORMAL
+		inputElements[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		inputElements[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputElements[2].SemanticName = "NORMAL";
+		inputElements[2].SemanticIndex = 0;
+
+		// Set up the four element - TANGENT
+		inputElements[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		inputElements[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputElements[3].SemanticName = "TANGENT";
+		inputElements[3].SemanticIndex = 0;
 	}
 
 	// Root Signature
