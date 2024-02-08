@@ -4,6 +4,7 @@ DX12Helper* DX12Helper::instance;
 
 DX12Helper::~DX12Helper()
 {
+
 }
 
 // --------------------------------------------------------

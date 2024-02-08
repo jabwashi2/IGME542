@@ -1,7 +1,9 @@
 #pragma once
 
 #include "DXCore.h"
+#include "Camera.h"
 #include <DirectXMath.h>
+#include <memory>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 
 class Game 
@@ -19,11 +21,14 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 
+	std::shared_ptr<Camera> camera;
+
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void CreateGeometry();
 	void CreateRootSigAndPipelineState();
+	void CreateCamera();
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

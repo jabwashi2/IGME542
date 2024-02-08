@@ -83,6 +83,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvDescriptorHeap;
 	SIZE_T cbvSrvDescriptorHeapIncrementSize;
 	unsigned int cbvDescriptorOffset;
+
 	void CreateConstantBufferUploadHeap();
 	void CreateCBVSRVDescriptorHeap();
 

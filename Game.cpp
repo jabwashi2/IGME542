@@ -68,6 +68,7 @@ void Game::Init()
 // - You'll be expanding and/or replacing these later
 	CreateRootSigAndPipelineState();
 	CreateGeometry();
+	CreateCamera();
 }
 
 
@@ -263,6 +264,17 @@ void Game::CreateRootSigAndPipelineState()
 	}
 }
 
+void Game::CreateCamera()
+{
+	camera = std::make_shared<Camera>(
+		0.0f, 0.0f, -5.0f,
+		5.0f,
+		1.0f,
+		XM_PIDIV4, // pi/4
+		float(this->windowWidth) / this->windowHeight
+	);
+}
+
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size.
@@ -273,6 +285,7 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+	camera->UpdateProjectionMatrix(camera->GetFOV(), camera->GetAspectRatio());
 }
 
 // --------------------------------------------------------
@@ -280,6 +293,8 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	camera->Update(deltaTime);
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
