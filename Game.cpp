@@ -3,6 +3,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "DX12Helper.h"
+#include "BufferStructs.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -36,6 +37,10 @@ Game::Game(HINSTANCE hInstance)
 
 	ibView = {};
 	vbView = {};
+
+	entities = {};
+
+	//dx12Helper = {};
 }
 
 // --------------------------------------------------------
@@ -69,6 +74,7 @@ void Game::Init()
 	CreateRootSigAndPipelineState();
 	CreateGeometry();
 	CreateCamera();
+
 }
 
 
@@ -112,9 +118,8 @@ void Game::CreateGeometry()
 	LoadAndCreateAssets();
 
 	// Create the two buffers
-	DX12Helper& dx12Helper = DX12Helper::GetInstance();
-	vertexBuffer = dx12Helper.CreateStaticBuffer(sizeof(Vertex), ARRAYSIZE(vertices), vertices);
-	indexBuffer = dx12Helper.CreateStaticBuffer(sizeof(unsigned int), ARRAYSIZE(indices), indices);
+	vertexBuffer = DX12Helper::GetInstance().CreateStaticBuffer(sizeof(Vertex), ARRAYSIZE(vertices), vertices);
+	indexBuffer = DX12Helper::GetInstance().CreateStaticBuffer(sizeof(unsigned int), ARRAYSIZE(indices), indices);
 
 	// Set up the views
 	vbView.StrideInBytes = sizeof(Vertex);
@@ -203,19 +208,25 @@ void Game::CreateRootSigAndPipelineState()
 		rootSig.NumStaticSamplers = 0;
 		rootSig.pStaticSamplers = 0;
 
+		ID3DBlob* serializedRootSig = 0;
+		ID3DBlob* errors = 0;
+		D3D12SerializeRootSignature(
+			&rootSig,
+			D3D_ROOT_SIGNATURE_VERSION_1,
+			&serializedRootSig,
+			&errors);
+		// Check for errors during serialization
+		if (errors != 0)
+		{
+			OutputDebugString((wchar_t*)errors->GetBufferPointer());
+		}
 
-		//// Check for errors during serialization
-		//if (errors != 0)
-		//{
-		//	OutputDebugString((wchar_t*)errors->GetBufferPointer());
-		//}
-
-		//// Actually create the root sig
-		//device->CreateRootSignature(
-		//	0,
-		//	serializedRootSig->GetBufferPointer(),
-		//	serializedRootSig->GetBufferSize(),
-		//	IID_PPV_ARGS(rootSignature.GetAddressOf()));
+		// Actually create the root sig
+		device->CreateRootSignature(
+			0,
+			serializedRootSig->GetBufferPointer(),
+			serializedRootSig->GetBufferSize(),
+			IID_PPV_ARGS(rootSignature.GetAddressOf()));
 	}
 
 	// Pipeline state
@@ -273,7 +284,7 @@ void Game::CreateCamera()
 	camera = std::make_shared<Camera>(
 		0.0f, 0.0f, -5.0f,
 		5.0f,
-		1.0f,
+		0.002f,
 		XM_PIDIV4, // pi/4
 		float(this->windowWidth) / this->windowHeight
 	);
@@ -289,11 +300,12 @@ void Game::LoadAndCreateAssets()
 		//sphere
 		//torus
 
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), device, commandList)));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), device, commandList)));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/helix.obj").c_str(), device, commandList)));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), device, commandList)));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/torus.obj").c_str(), device, commandList)));
+		std::shared_ptr<Mesh> cube = std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList);
+		entities.push_back(GameEntity(cube));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cylinder.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/helix.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/sphere.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/torus.obj").c_str(), device, commandList)));
 	}
 
 	// changing transforms
@@ -323,19 +335,18 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	// Example input checking: Quit if the escape key is pressed
+	if (Input::GetInstance().KeyDown(VK_ESCAPE))
+		Quit();
+
 	// updating the camera
 	camera->Update(deltaTime);
 
 	// make the shapes spin!
 	for (int i = 0; i < entities.size() - 1; i++)
 	{
-		entities[i].GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
+		entities[i].GetTransform()->Rotate(0.0f, .5f * deltaTime, 0.0f);
 	}
-
-
-	// Example input checking: Quit if the escape key is pressed
-	if (Input::GetInstance().KeyDown(VK_ESCAPE))
-		Quit();
 }
 
 // --------------------------------------------------------
@@ -378,22 +389,50 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Rendering here!
 	{
+		DX12Helper& dx12Helper = DX12Helper::GetInstance();
+
 		// Set overall pipeline state
 		commandList->SetPipelineState(pipelineState.Get());
 
 		// Root sig (must happen before root descriptor table)
 		commandList->SetGraphicsRootSignature(rootSignature.Get());
 
+		// set the descriptor heap
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap =
+			dx12Helper.GetCBVSRVDescriptorHeap();
+		commandList->SetDescriptorHeaps(1, descriptorHeap.GetAddressOf());
+
 		// Set up other commands for rendering
 		commandList->OMSetRenderTargets(1, &rtvHandles[currentSwapBuffer], true, &dsvHandle);
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
-		commandList->IASetVertexBuffers(0, 1, &vbView);
-		commandList->IASetIndexBuffer(&ibView);
+		//commandList->IASetVertexBuffers(0, 1, &vbView);
+		//commandList->IASetIndexBuffer(&ibView);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		// Draw
-		commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
+
+		// entity rendering loop
+		for (auto& e : entities) {
+			VertexShaderExternalData vsed = {};
+
+			vsed.worldMatrix = e.GetTransform()->GetWorldMatrix();
+			vsed.viewMatrix = camera->GetView();
+			vsed.projMatrix = camera->GetProjection();
+
+			D3D12_GPU_DESCRIPTOR_HANDLE handle = dx12Helper.FillNextConstantBufferAndGetGPUDescriptorHandle((void*)(&vsed), sizeof(VertexShaderExternalData));
+			commandList->SetGraphicsRootDescriptorTable(0, handle);
+
+			D3D12_VERTEX_BUFFER_VIEW this_vbv = e.GetMesh()->GetVertexBufferView();
+			D3D12_INDEX_BUFFER_VIEW this_ibv = e.GetMesh()->GetIndexBufferView();
+
+			commandList->IASetVertexBuffers(0, 1, &this_vbv);
+			commandList->IASetIndexBuffer(&this_ibv);
+
+			// Draw
+			commandList->DrawIndexedInstanced(e.GetMesh()->GetIndexCount(), 1, 0, 0, 0);
+		}
+
+
 	}
 
 	// Present

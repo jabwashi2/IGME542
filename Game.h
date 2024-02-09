@@ -51,5 +51,7 @@ private:
 	// entity list
 	std::vector<GameEntity> entities;
 
+	//DX12Helper& dx12Helper;
+
 };
 

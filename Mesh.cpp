@@ -15,9 +15,9 @@
 
 using namespace DirectX;
 
-Mesh::Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D11Device> _device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> _context)
+Mesh::Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList)
 {
-	this->context = _context;
+	this->commandList = _commandList;
 	this->indices = numIndices;
 	this->vertices = numVertices;
 
@@ -30,7 +30,7 @@ Mesh::Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIn
 	// creating buffers
 	CreateBuffers(_vertices, numVertices, _indices, numIndices, _device);
 }
-Mesh::Mesh(const char* fileName, Microsoft::WRL::ComPtr<ID3D11Device> _device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> _context)
+Mesh::Mesh(const char* fileName, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList)
 {
 	// Author: Chris Cascioli
 	// Purpose: Basic .OBJ 3D model loading, supporting positions, uvs and normals
@@ -41,7 +41,13 @@ Mesh::Mesh(const char* fileName, Microsoft::WRL::ComPtr<ID3D11Device> _device, M
 	//
 	// - NOTE: You'll need to #include <fstream>
 
-	this->context = _context;
+	this->commandList = _commandList;
+
+	vbView = {};
+	ibView = {};
+
+	this->indices = 0;
+	this->vertices = 0;
 
 	// File input object
 	std::ifstream obj(fileName);
@@ -228,40 +234,47 @@ Mesh::~Mesh()
 
 // **** getters ****
 
-Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetVertexBuffer()
+Microsoft::WRL::ComPtr<ID3D12Resource> Mesh::GetVertexBuffer()
 {
 	return vertexBuffer;
 }
-Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetIndexBuffer()
+Microsoft::WRL::ComPtr<ID3D12Resource> Mesh::GetIndexBuffer()
 {
 	return indexBuffer;
+}
+D3D12_VERTEX_BUFFER_VIEW Mesh::GetVertexBufferView()
+{
+	return vbView;
+}
+D3D12_INDEX_BUFFER_VIEW Mesh::GetIndexBufferView()
+{
+	return ibView;
 }
 int Mesh::GetIndexCount()
 {
 	return indices;
 }
-Microsoft::WRL::ComPtr<ID3D11DeviceContext> Mesh::GetContext()
+
+Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> Mesh::GetComandList()
 {
-	return context;
+	return commandList;
 }
+
 
 void Mesh::Draw()
 {
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	{
-		context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-		context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-		context->DrawIndexed(
-			indices,     // The number of indices to use (we could draw a subset if we wanted)
-			0,     // Offset to the first index we want to use
-			0);    // Offset to add to each index when looking up vertices
+		commandList->IASetVertexBuffers(0, 1, &vbView);
+		commandList->IASetIndexBuffer(&ibView);
+		commandList->DrawIndexedInstanced(indices, 1, 0, 0, 0);
 	}
 }
 
 // **** helpers ****
 
-void Mesh::CreateBuffers(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D11Device> _device)
+void Mesh::CreateBuffers(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D12Device> _device)
 {
 	DX12Helper& dx12Helper = DX12Helper::GetInstance();
 

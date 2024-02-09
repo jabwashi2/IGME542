@@ -21,8 +21,23 @@ public:
 	// Remove these functions (C++ 11 version)
 	DX12Helper(DX12Helper const&) = delete;
 	void operator=(DX12Helper const&) = delete;
+
+private:
+	static DX12Helper* instance;
+	DX12Helper() :
+		cbUploadHeap(0),
+		cbUploadHeapOffsetInBytes(0),
+		cbUploadHeapSizeInBytes(0),
+		cbUploadHeapStartAddress(0),
+		cbvSrvDescriptorHeap(0),
+		cbvSrvDescriptorHeapIncrementSize(0),
+		cbvDescriptorOffset(0),
+		waitFenceCounter(0),
+		waitFenceEvent(0),
+		waitFence(0) {};
 #pragma endregion
 
+public:
 	~DX12Helper();
 
 	// Initialization for singleton
@@ -49,8 +64,7 @@ public:
 		unsigned int dataSizeInBytes);
 
 private:
-	static DX12Helper* instance;
-	DX12Helper() {};
+	
 
 	// Overall device
 	Microsoft::WRL::ComPtr<ID3D12Device> device;
