@@ -97,9 +97,9 @@ void Game::CreateGeometry()
 	//    since we're describing the triangle in terms of the window itself
 	Vertex vertices[] =
 	{
-		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
-		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
+		{ XMFLOAT3(+0.0f, +0.5f, +0.0f)},
+		{ XMFLOAT3(+0.5f, -0.5f, +0.0f)},
+		{ XMFLOAT3(-0.5f, -0.5f, +0.0f)},
 	};
 
 	// Set up indices, which tell us which vertices to use and in which order
@@ -108,6 +108,8 @@ void Game::CreateGeometry()
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
 	unsigned int indices[] = { 0, 1, 2 };
+
+	LoadAndCreateAssets();
 
 	// Create the two buffers
 	DX12Helper& dx12Helper = DX12Helper::GetInstance();
@@ -279,14 +281,30 @@ void Game::CreateCamera()
 
 void Game::LoadAndCreateAssets()
 {
-	entities.push_back(
-		GameEntity(
-			std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), device, commandList),
+	// loading in assets + creating entities
+	{
+		//cube
+		//cylinder
+		//helix
+		//sphere
+		//torus
 
-	);
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/helix.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/Models/torus.obj").c_str(), device, commandList)));
+	}
+
+	// changing transforms
+	{
+		entities[0].GetTransform()->SetPosition(XMFLOAT3(-6.0f, 0.0f, 0.0f));
+		entities[1].GetTransform()->SetPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
+		entities[3].GetTransform()->SetPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
+		entities[4].GetTransform()->SetPosition(XMFLOAT3(6.0f, 0.0f, 0.0f));
+	}
+	
 }
-
-
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size.
@@ -305,7 +323,15 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	// updating the camera
 	camera->Update(deltaTime);
+
+	// make the shapes spin!
+	for (int i = 0; i < entities.size() - 1; i++)
+	{
+		entities[i].GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
+	}
+
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))

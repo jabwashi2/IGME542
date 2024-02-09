@@ -2,18 +2,21 @@
 
 GameEntity::GameEntity(std::shared_ptr<Mesh> mesh_ptr)
 {
+
 }
 
 std::shared_ptr<Mesh> GameEntity::GetMesh()
 {
-    return std::shared_ptr<Mesh>();
+    return myMesh;
 }
 
+// set up if needed
 void GameEntity::SetMesh()
 {
+
 }
 
 std::shared_ptr<Transform> GameEntity::GetTransform()
 {
-    return std::shared_ptr<Transform>();
+    return myTransform;
 }
