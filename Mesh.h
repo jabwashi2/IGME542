@@ -1,7 +1,10 @@
 #pragma once
+
+#include "Vertex.h"
+#include "DX12Helper.h"
+
 #include <d3d11.h> // for referencing Direct3D stuff
 #include <wrl/client.h> // when using ComPtrs for Direct3D objects
-#include "Vertex.h"
 
 class Mesh
 {
@@ -28,11 +31,15 @@ public:
 	void Draw();
 
 private:
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> indexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
+
 	int indices;
 	int vertices;
+
+	D3D12_VERTEX_BUFFER_VIEW vbView;
+	D3D12_INDEX_BUFFER_VIEW ibView;
 
 	// **** helpers ****
 

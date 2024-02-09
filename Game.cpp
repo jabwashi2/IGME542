@@ -264,6 +264,8 @@ void Game::CreateRootSigAndPipelineState()
 	}
 }
 
+// *** helper functions
+
 void Game::CreateCamera()
 {
 	camera = std::make_shared<Camera>(
@@ -274,6 +276,16 @@ void Game::CreateCamera()
 		float(this->windowWidth) / this->windowHeight
 	);
 }
+
+void Game::LoadAndCreateAssets()
+{
+	entities.push_back(
+		GameEntity(
+			std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), device, commandList),
+
+	);
+}
+
 
 
 // --------------------------------------------------------

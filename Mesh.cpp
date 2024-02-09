@@ -1,10 +1,11 @@
 #include "Mesh.h"
-#include <d3d11.h> // for referencing Direct3D stuff
-#include <wrl/client.h> // when using ComPtrs for Direct3D objects
+#include "DX12Helper.h"
 #include "Vertex.h" // holds our custom Vertex struct
 #include "Input.h"
 #include "PathHelpers.h"
 
+#include <d3d11.h> // for referencing Direct3D stuff
+#include <wrl/client.h> // when using ComPtrs for Direct3D objects
 #include <iostream>
 #include <fstream>
 #include <d3dcompiler.h>
@@ -19,6 +20,9 @@ Mesh::Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIn
 	this->context = _context;
 	this->indices = numIndices;
 	this->vertices = numVertices;
+
+	vbView = {};
+	ibView = {};
 
 	// call tangent calculating function
 	CalculateTangents(_vertices, numVertices, _indices, numIndices);
@@ -206,19 +210,7 @@ Mesh::Mesh(const char* fileName, Microsoft::WRL::ComPtr<ID3D11Device> _device, M
 	}
 	// Close the file and create the actual buffers
 	obj.close();
-	// - At this point, "verts" is a vector of Vertex structs, and can be used
-	//    directly to create a vertex buffer:  &verts[0] is the address of the first vert
-	//
-	// - The vector "indices" is similar. It's a vector of unsigned ints and
-	//    can be used directly for the index buffer: &indices[0] is the address of the first int
-	//
-	// - "vertCounter" is the number of vertices
-	// - "indexCounter" is the number of indices
-	// - Yes, these are effectively the same since OBJs do not index entire vertices!  This means
-	//    an index buffer isn't doing much for us.  We could try to optimize the mesh ourselves
-	//    and detect duplicate vertices, but at that point it would be better to use a more
-	//    sophisticated model loading library like TinyOBJLoader or The Open Asset Importer Library
-	// instantiate values
+	
 	this->indices = indexCounter;
 	this->vertices = vertCounter;
 
@@ -271,33 +263,22 @@ void Mesh::Draw()
 
 void Mesh::CreateBuffers(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D11Device> _device)
 {
+	DX12Helper& dx12Helper = DX12Helper::GetInstance();
+
 	// creating the vertex buffer
-	{
-		D3D11_BUFFER_DESC vbd = {};
-		vbd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		vbd.ByteWidth = sizeof(Vertex) * vertices;      // 3 = number of vertices in the buffer; sizeof(Vertex) * vertices; 
-		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells Direct3D this is a vertex buffer
-		vbd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
-		vbd.MiscFlags = 0;
-		vbd.StructureByteStride = 0;
-		D3D11_SUBRESOURCE_DATA initialVertexData = {};
-		initialVertexData.pSysMem = _vertices; // pSysMem = Pointer to System Memory
-		_device->CreateBuffer(&vbd, &initialVertexData, vertexBuffer.GetAddressOf());
-	}
+	vertexBuffer = dx12Helper.CreateStaticBuffer(sizeof(Vertex), numVertices, _vertices);
+	
 	// creating the index buffer
-	{
-		D3D11_BUFFER_DESC ibd = {};
-		ibd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		ibd.ByteWidth = sizeof(unsigned int) * indices;	// 3 = number of indices in the buffer; sizeof(unsigned int) * indices;
-		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;	// Tells Direct3D this is an index buffer
-		ibd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
-		ibd.MiscFlags = 0;
-		ibd.StructureByteStride = 0;
-		// Specify the initial data for this buffer, similar to above
-		D3D11_SUBRESOURCE_DATA initialIndexData = {};
-		initialIndexData.pSysMem = _indices; // pSysMem = Pointer to System Memory
-		_device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
-	}
+	indexBuffer = dx12Helper.CreateStaticBuffer(sizeof(unsigned int), numIndices, _indices);
+
+	// Set up the views
+	vbView.StrideInBytes = sizeof(Vertex);
+	vbView.SizeInBytes = sizeof(Vertex) * numVertices;
+	vbView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+
+	ibView.Format = DXGI_FORMAT_R32_UINT;
+	ibView.SizeInBytes = sizeof(unsigned int) * numIndices;
+	ibView.BufferLocation = indexBuffer->GetGPUVirtualAddress();	
 }
 // --------------------------------------------------------
 // Author: Chris Cascioli

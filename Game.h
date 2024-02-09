@@ -2,8 +2,11 @@
 
 #include "DXCore.h"
 #include "Camera.h"
+#include "GameEntity.h"
+
 #include <DirectXMath.h>
 #include <memory>
+#include <vector>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 
 class Game 
@@ -29,6 +32,7 @@ private:
 	void CreateGeometry();
 	void CreateRootSigAndPipelineState();
 	void CreateCamera();
+	void LoadAndCreateAssets();
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -43,6 +47,9 @@ private:
 
 	D3D12_VERTEX_BUFFER_VIEW vbView;
 	D3D12_INDEX_BUFFER_VIEW ibView;
+
+	// entity list
+	std::vector<GameEntity> entities;
 
 };
 
