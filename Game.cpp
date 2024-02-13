@@ -4,6 +4,8 @@
 #include "PathHelpers.h"
 #include "DX12Helper.h"
 #include "BufferStructs.h"
+#include "Camera.h"
+
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -39,8 +41,6 @@ Game::Game(HINSTANCE hInstance)
 	vbView = {};
 
 	entities = {};
-
-	//dx12Helper = {};
 }
 
 // --------------------------------------------------------
@@ -74,7 +74,6 @@ void Game::Init()
 	CreateRootSigAndPipelineState();
 	CreateGeometry();
 	CreateCamera();
-
 }
 
 
@@ -284,7 +283,7 @@ void Game::CreateCamera()
 	camera = std::make_shared<Camera>(
 		0.0f, 0.0f, -5.0f,
 		5.0f,
-		0.002f,
+		1.0f,
 		XM_PIDIV4, // pi/4
 		float(this->windowWidth) / this->windowHeight
 	);
@@ -302,18 +301,23 @@ void Game::LoadAndCreateAssets()
 
 		std::shared_ptr<Mesh> cube = std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList);
 		entities.push_back(GameEntity(cube));
+		entities[0].GetTransform()->SetPosition(XMFLOAT3(-6.0f, 0.0f, 0.0f));
+
 		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cylinder.obj").c_str(), device, commandList)));
+		entities[1].GetTransform()->SetPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
+
 		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/helix.obj").c_str(), device, commandList)));
+
 		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/sphere.obj").c_str(), device, commandList)));
+		entities[3].GetTransform()->SetPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
+
 		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/torus.obj").c_str(), device, commandList)));
+		entities[4].GetTransform()->SetPosition(XMFLOAT3(6.0f, 0.0f, 0.0f));
+
 	}
 
 	// changing transforms
 	{
-		entities[0].GetTransform()->SetPosition(XMFLOAT3(-6.0f, 0.0f, 0.0f));
-		entities[1].GetTransform()->SetPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
-		entities[3].GetTransform()->SetPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
-		entities[4].GetTransform()->SetPosition(XMFLOAT3(6.0f, 0.0f, 0.0f));
 	}
 	
 }
@@ -335,18 +339,19 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
-	// Example input checking: Quit if the escape key is pressed
-	if (Input::GetInstance().KeyDown(VK_ESCAPE))
-		Quit();
-
 	// updating the camera
 	camera->Update(deltaTime);
 
 	// make the shapes spin!
 	for (int i = 0; i < entities.size() - 1; i++)
 	{
-		entities[i].GetTransform()->Rotate(0.0f, .5f * deltaTime, 0.0f);
+		entities[i].GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f); //Rotate(XMFLOAT3(0.0f, .5f * deltaTime, 0.0f));
 	}
+
+	// Example input checking: Quit if the escape key is pressed
+	if (Input::GetInstance().KeyDown(VK_ESCAPE))
+		Quit();
+
 }
 
 // --------------------------------------------------------

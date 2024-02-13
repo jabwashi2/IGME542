@@ -53,7 +53,7 @@ VertexToPixel main( VertexShaderInput input )
 	// Set up output struct
 	VertexToPixel output;
 	
-    matrix wvp = mul(projection, mul(world, view));
+    matrix wvp = mul(projection, mul(view, world));
 	
     output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
 

@@ -24,7 +24,6 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 
-	std::shared_ptr<Camera> camera;
 
 private:
 
@@ -51,7 +50,7 @@ private:
 	// entity list
 	std::vector<GameEntity> entities;
 
-	//DX12Helper& dx12Helper;
+	std::shared_ptr<Camera> camera;
 
 };
 
