@@ -22,6 +22,11 @@ void GameEntity::SetMesh()
 
 }
 
+void GameEntity::SetMaterial(std::shared_ptr<Material> mtrl_ptr)
+{
+    this->myMaterial = mtrl_ptr;
+}
+
 std::shared_ptr<Transform> GameEntity::GetTransform()
 {
     return myTransform;

@@ -13,6 +13,7 @@ public:
 	std::shared_ptr<Material> GetMaterial();
 	// may not use this
 	void SetMesh();
+	void SetMaterial(std::shared_ptr<Material> mtrl_ptr);
 	std::shared_ptr<Transform> GetTransform();
 
 private:

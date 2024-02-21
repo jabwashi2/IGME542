@@ -74,18 +74,22 @@ D3D12_GPU_DESCRIPTOR_HANDLE Material::GetFinalGPUHandleForSRVs()
 
 // Setters
 
-void Material::SetColorTint()
+void Material::SetColorTint(DirectX::XMFLOAT3 newColor)
 {
+	this->colorTint = newColor;
 }
 
-void Material::SetUVScale()
+void Material::SetUVScale(DirectX::XMFLOAT2 newScale)
 {
+	this->uvScale = newScale;
 }
 
-void Material::SetUVOffset()
+void Material::SetUVOffset(DirectX::XMFLOAT2 newOffset)
 {
+	this->uvOffset = newOffset;
 }
 
-void Material::SetPipelineState()
+void Material::SetPipelineState(Microsoft::WRL::ComPtr<ID3D12PipelineState> newPipeline)
 {
+	this->pipelineState = newPipeline;
 }

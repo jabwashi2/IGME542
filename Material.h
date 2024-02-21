@@ -20,10 +20,10 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetFinalGPUHandleForSRVs();
 
 	// setters
-	void SetColorTint();
-	void SetUVScale();
-	void SetUVOffset();
-	void SetPipelineState();
+	void SetColorTint(DirectX::XMFLOAT3 newColor);
+	void SetUVScale(DirectX::XMFLOAT2 newScale);
+	void SetUVOffset(DirectX::XMFLOAT2 newOffset);
+	void SetPipelineState(Microsoft::WRL::ComPtr<ID3D12PipelineState> newPipeline);
 
 private:
 	bool finalized;
