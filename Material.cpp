@@ -1,4 +1,5 @@
 #include "Material.h"
+#include "DX12Helper.h"
 
 Material::Material(Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipelineState, DirectX::XMFLOAT3 _colorTint, DirectX::XMFLOAT2 _uvScale, DirectX::XMFLOAT2 _uvOffset)
 {
@@ -10,6 +11,8 @@ Material::Material(Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipelineState, D
 
 	// initialize other values
 	this->finalized = false;
+
+
 }
 
 Material::~Material()
@@ -18,10 +21,26 @@ Material::~Material()
 
 void Material::AddTexture(D3D12_CPU_DESCRIPTOR_HANDLE srv, int slot)
 {
+	// adding the srv to the array based on the slot (index)
+	textureSRVsBySlot[slot] = srv;
 }
 
 void Material::FinalizeMaterial()
 {
+	// make sure material has not been finalized
+	if (!finalized) {
+		int loopnum = 0;
+		// copy one srv at a time in a loop
+		for (auto& s : textureSRVsBySlot) {
+			loopnum++;
+			// call dx12 function to copy srvs
+			D3D12_GPU_DESCRIPTOR_HANDLE currentHandle = DX12Helper::GetInstance().CopySRVsToDescriptorHeapAndGetGPUDescriptorHandle(s, ARRAYSIZE(textureSRVsBySlot));
+
+			if (loopnum == 1) {
+				finalGPUHandleForSRVs = currentHandle;
+			}
+		}
+	}
 }
 
 
