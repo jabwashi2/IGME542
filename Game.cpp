@@ -73,6 +73,8 @@ void Game::Init()
 
 	CreateRootSigAndPipelineState();
 
+	LoadMaterials();
+
 	CreateGeometry();
 	
 	CreateCamera();
@@ -346,27 +348,21 @@ void Game::LoadAndCreateAssets()
 		//sphere
 		//torus
 
-		std::shared_ptr<Mesh> cube = std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList);
-		entities.push_back(GameEntity(cube));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList), bronzeMaterial));
 		entities[0].GetTransform()->SetPosition(XMFLOAT3(-6.0f, 0.0f, 0.0f));
 
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cylinder.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cylinder.obj").c_str(), device, commandList), woodMaterial));
 		entities[1].GetTransform()->SetPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
 
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/helix.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/helix.obj").c_str(), device, commandList), bronzeMaterial));
 
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/sphere.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/sphere.obj").c_str(), device, commandList), woodMaterial));
 		entities[3].GetTransform()->SetPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
 
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/torus.obj").c_str(), device, commandList)));
+		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/torus.obj").c_str(), device, commandList), bronzeMaterial));
 		entities[4].GetTransform()->SetPosition(XMFLOAT3(6.0f, 0.0f, 0.0f));
 
 	}
-
-	// changing transforms
-	{
-	}
-	
 }
 
 void Game::LoadMaterials()
@@ -534,6 +530,13 @@ void Game::Draw(float deltaTime, float totalTime)
 
 			commandList->IASetVertexBuffers(0, 1, &this_vbv);
 			commandList->IASetIndexBuffer(&this_ibv);
+
+			// material things
+			std::shared_ptr<Material> mat = e.GetMaterial();
+			commandList->SetPipelineState(mat->GetPipeLineState().Get());
+			// Set the SRV descriptor handle for this material's textures
+			// Note: This assumes that descriptor table 2 is for textures (as per our root sig)
+			commandList->SetGraphicsRootDescriptorTable(2, mat->GetFinalGPUHandleForSRVs());
 
 			// Draw
 			commandList->DrawIndexedInstanced(e.GetMesh()->GetIndexCount(), 1, 0, 0, 0);
