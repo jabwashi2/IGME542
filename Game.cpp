@@ -371,11 +371,57 @@ void Game::LoadAndCreateAssets()
 
 void Game::LoadMaterials()
 {
+	//DX12Helper::GetInstance();
+	
 	// make 2 materials, each has 4 textures:
 	// - albedo
 	// - metal
 	// - normal
 	// - roughness
+
+	// material constructor expects pipeline state, float3 colortint, float2 uvscale, float2 uvoffset
+
+	// bronze
+	bronzeMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, 1, 1));
+
+	{
+		// bronze textures
+		D3D12_CPU_DESCRIPTOR_HANDLE bAlbedo = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_albedo.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE bMetal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_metal.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE bNormal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_normal.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE bRough = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_roughness.png");
+
+		// giving textures to materials
+		bronzeMaterial->AddTexture(bAlbedo, 0);
+		bronzeMaterial->AddTexture(bMetal, 1);
+		bronzeMaterial->AddTexture(bNormal, 2);
+		bronzeMaterial->AddTexture(bRough, 3);
+	}
+
+	// finalize the material
+	bronzeMaterial->FinalizeMaterial();
+
+
+
+	// wood
+	woodMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, 1, 1));
+
+	{
+		// wood textures
+		D3D12_CPU_DESCRIPTOR_HANDLE wAlbedo = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_albedo.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE wMetal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_metal.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE wNormal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_normal.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE wRough = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_roughness.png");
+
+		// giving textures to materials
+		woodMaterial->AddTexture(wAlbedo, 0);
+		woodMaterial->AddTexture(wMetal, 1);
+		woodMaterial->AddTexture(wNormal, 2);
+		woodMaterial->AddTexture(wRough, 3);
+	}
+
+	// finalize the material
+	woodMaterial->FinalizeMaterial();
 }
 
 // --------------------------------------------------------

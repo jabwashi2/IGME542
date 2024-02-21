@@ -54,18 +54,10 @@ private:
 
 	std::shared_ptr<Camera> camera;
 
-	// bronze materials
+	// bronze material
 	std::shared_ptr<Material> bronzeMaterial;
-	//std::shared_ptr<Material> bronzeMetal;
-	//std::shared_ptr<Material> bronzeNormal;
-	//std::shared_ptr<Material> bronzeRough;
 
-	// wood materials
+	// wood material
 	std::shared_ptr<Material> woodMaterial;
-	//std::shared_ptr<Material> woodMetal;
-	//std::shared_ptr<Material> woodNormal;
-	//std::shared_ptr<Material> woodRough;
-
-
 };
 
