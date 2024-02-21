@@ -11,8 +11,18 @@ struct VertexToPixel
 	//  |   Name          Semantic
 	//  |    |                |
 	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
+    float4 screenPosition	: SV_POSITION; // XYZW position (System Value Position)
+    float2 uv				: TEXTCOORD;
+    float3 normal			: NORMAL;
+    float3 tangent			: TANGENT;
+    float3 worldPosition	: POSITION;
 };
+
+// smapler for textures!
+SamplerState BasicSampler : register(s0);
+
+Texture2D SurfaceTexture : register(t0);
+
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -29,5 +39,8 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
-    return float4(1,1,1,1);
+	
+    float3 surfaceColor = pow(SurfaceTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
+	
+    return float4(surfaceColor, 1);
 }
