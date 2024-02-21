@@ -3,6 +3,7 @@
 #include "DXCore.h"
 #include "Camera.h"
 #include "GameEntity.h"
+#include "Material.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -32,6 +33,7 @@ private:
 	void CreateRootSigAndPipelineState();
 	void CreateCamera();
 	void LoadAndCreateAssets();
+	void LoadMaterials();
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -51,6 +53,19 @@ private:
 	std::vector<GameEntity> entities;
 
 	std::shared_ptr<Camera> camera;
+
+	// bronze materials
+	std::shared_ptr<Material> bronzeMaterial;
+	//std::shared_ptr<Material> bronzeMetal;
+	//std::shared_ptr<Material> bronzeNormal;
+	//std::shared_ptr<Material> bronzeRough;
+
+	// wood materials
+	std::shared_ptr<Material> woodMaterial;
+	//std::shared_ptr<Material> woodMetal;
+	//std::shared_ptr<Material> woodNormal;
+	//std::shared_ptr<Material> woodRough;
+
 
 };
 

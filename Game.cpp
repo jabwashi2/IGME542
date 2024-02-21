@@ -69,11 +69,15 @@ Game::~Game()
 void Game::Init()
 {
 	// Helper methods for loading shaders, creating some basic
-// geometry to draw and some simple camera matrices.
-// - You'll be expanding and/or replacing these later
+	// geometry to draw and some simple camera matrices.
+
 	CreateRootSigAndPipelineState();
+
 	CreateGeometry();
+	
 	CreateCamera();
+
+	LoadMaterials();
 }
 
 
@@ -363,6 +367,15 @@ void Game::LoadAndCreateAssets()
 	{
 	}
 	
+}
+
+void Game::LoadMaterials()
+{
+	// make 2 materials, each has 4 textures:
+	// - albedo
+	// - metal
+	// - normal
+	// - roughness
 }
 
 // --------------------------------------------------------
