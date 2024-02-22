@@ -16,6 +16,7 @@ cbuffer ExternalData : register(b0)
 // smapler for textures!
 SamplerState BasicSampler : register(s0);
 
+// textures!
 Texture2D AlbedoTexture : register(t0);
 Texture2D MetalTexture : register(t1);
 Texture2D NormalTexture : register(t2);
@@ -32,27 +33,23 @@ Texture2D RoughTexture : register(t3);
 // - Named "main" because that's the default the shader compiler looks for
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
-{
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-    
+{    
     float3 N = input.normal = normalize(input.normal); // Must be normalized here or before
     float3 T = normalize(input.tangent); // Must be normalized here or before
     
     T = normalize(T - N * dot(T, N)); // Gram-Schmidt assumes T&N are normalized!
     float3 B = cross(T, N);
     float3x3 TBN = float3x3(T, B, N);
-	
-    float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
-    float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
-    float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
+
     float3 unpackedNormal = NormalTexture.Sample(BasicSampler, input.uv).rgb * 2 - 1;
     unpackedNormal = normalize(unpackedNormal); // Don’t forget to normalize!
 
     input.normal = mul(unpackedNormal, TBN); // Note multiplication order!
 
-	
-    return float4(surfaceColor, 1);
+    float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f); // surfaceColor only consists of albedo texture
+    float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
+    float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
+
+
+    return float4(1, 1, 1, 1);
 }

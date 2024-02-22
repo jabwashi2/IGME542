@@ -79,7 +79,7 @@ void Game::Init()
 	
 	CreateCamera();
 
-	LoadMaterials();
+	//LoadMaterials();
 }
 
 
@@ -382,10 +382,10 @@ void Game::LoadMaterials()
 
 	{
 		// bronze textures
-		D3D12_CPU_DESCRIPTOR_HANDLE bAlbedo = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_albedo.png");
-		D3D12_CPU_DESCRIPTOR_HANDLE bMetal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_metal.png");
-		D3D12_CPU_DESCRIPTOR_HANDLE bNormal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_normal.png");
-		D3D12_CPU_DESCRIPTOR_HANDLE bRough = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/bronze_roughness.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE bAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_albedo.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE bMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_metal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE bNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_normal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE bRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_roughness.png").c_str());
 
 		// giving textures to materials
 		bronzeMaterial->AddTexture(bAlbedo, 0);
@@ -404,10 +404,10 @@ void Game::LoadMaterials()
 
 	{
 		// wood textures
-		D3D12_CPU_DESCRIPTOR_HANDLE wAlbedo = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_albedo.png");
-		D3D12_CPU_DESCRIPTOR_HANDLE wMetal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_metal.png");
-		D3D12_CPU_DESCRIPTOR_HANDLE wNormal = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_normal.png");
-		D3D12_CPU_DESCRIPTOR_HANDLE wRough = DX12Helper::GetInstance().LoadTexture(L"../../../../Assets/Textures/PBR/wood_roughness.png");
+		D3D12_CPU_DESCRIPTOR_HANDLE wAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_albedo.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE wMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_metal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE wNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_normal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE wRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_roughness.png").c_str());
 
 		// giving textures to materials
 		woodMaterial->AddTexture(wAlbedo, 0);
@@ -492,6 +492,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Rendering here!
 	{
+		// helper variable to make things easy :)
 		DX12Helper& dx12Helper = DX12Helper::GetInstance();
 
 		// Set overall pipeline state
@@ -516,6 +517,13 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// entity rendering loop
 		for (auto& e : entities) {
+
+			std::shared_ptr<Material> mat = e.GetMaterial();
+
+			commandList->SetPipelineState(mat->GetPipeLineState().Get());
+
+			// vertex shader data
+
 			VertexShaderExternalData vsed = {};
 
 			vsed.worldMatrix = e.GetTransform()->GetWorldMatrix();
@@ -531,11 +539,6 @@ void Game::Draw(float deltaTime, float totalTime)
 			commandList->IASetVertexBuffers(0, 1, &this_vbv);
 			commandList->IASetIndexBuffer(&this_ibv);
 
-			// material things
-			std::shared_ptr<Material> mat = e.GetMaterial();
-			commandList->SetPipelineState(mat->GetPipeLineState().Get());
-			// Set the SRV descriptor handle for this material's textures
-			// Note: This assumes that descriptor table 2 is for textures (as per our root sig)
 			commandList->SetGraphicsRootDescriptorTable(2, mat->GetFinalGPUHandleForSRVs());
 
 			// Draw

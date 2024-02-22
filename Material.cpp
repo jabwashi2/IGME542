@@ -34,12 +34,13 @@ void Material::FinalizeMaterial()
 		for (auto& s : textureSRVsBySlot) {
 			loopnum++;
 			// call dx12 function to copy srvs
-			D3D12_GPU_DESCRIPTOR_HANDLE currentHandle = DX12Helper::GetInstance().CopySRVsToDescriptorHeapAndGetGPUDescriptorHandle(s, ARRAYSIZE(textureSRVsBySlot));
+			D3D12_GPU_DESCRIPTOR_HANDLE currentHandle = DX12Helper::GetInstance().CopySRVsToDescriptorHeapAndGetGPUDescriptorHandle(s, 1);
 
 			if (loopnum == 1) {
 				finalGPUHandleForSRVs = currentHandle;
 			}
 		}
+		finalized = true;
 	}
 }
 

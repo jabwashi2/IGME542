@@ -12,11 +12,11 @@ struct VertexShaderExternalData
 	DirectX::XMFLOAT4X4 projMatrix;
 };
 
-struct PixelShaderExternalData
-{
-	DirectX::XMFLOAT2 uvScale;
-	DirectX::XMFLOAT2 uvOffset;
-	DirectX::XMFLOAT3 cameraPosition;
-	int lightCount;
-	Light lights[TOTAL_LIGHTS];
-};
+//struct PixelShaderExternalData
+//{
+//	DirectX::XMFLOAT2 uvScale;
+//	DirectX::XMFLOAT2 uvOffset;
+//	DirectX::XMFLOAT3 cameraPosition;
+//	int lightCount;
+//	Light lights[TOTAL_LIGHTS];
+//};
