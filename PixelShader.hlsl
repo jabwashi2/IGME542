@@ -1,27 +1,25 @@
 
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
+#include "ShaderStructsInclude.hlsli"
+
+#define TOTAL_LIGHTS 5
+
+// Alignment matters!!!
+cbuffer ExternalData : register(b0)
 {
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-    float4 screenPosition	: SV_POSITION; // XYZW position (System Value Position)
-    float2 uv				: TEXTCOORD;
-    float3 normal			: NORMAL;
-    float3 tangent			: TANGENT;
-    float3 worldPosition	: POSITION;
-};
+    float2 uvScale;
+    float2 uvOffset;
+    float3 cameraPosition;
+    int lightCount;
+    Light lights[TOTAL_LIGHTS]; // array of lights
+}
 
 // smapler for textures!
 SamplerState BasicSampler : register(s0);
 
-Texture2D SurfaceTexture : register(t0);
+Texture2D AlbedoTexture : register(t0);
+Texture2D MetalTexture : register(t1);
+Texture2D NormalTexture : register(t2);
+Texture2D RoughTexture : register(t3);
 
 
 // --------------------------------------------------------
@@ -39,8 +37,22 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
+    
+    float3 N = input.normal = normalize(input.normal); // Must be normalized here or before
+    float3 T = normalize(input.tangent); // Must be normalized here or before
+    
+    T = normalize(T - N * dot(T, N)); // Gram-Schmidt assumes T&N are normalized!
+    float3 B = cross(T, N);
+    float3x3 TBN = float3x3(T, B, N);
 	
-    float3 surfaceColor = pow(SurfaceTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
+    float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
+    float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
+    float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
+    float3 unpackedNormal = NormalTexture.Sample(BasicSampler, input.uv).rgb * 2 - 1;
+    unpackedNormal = normalize(unpackedNormal); // Don’t forget to normalize!
+
+    input.normal = mul(unpackedNormal, TBN); // Note multiplication order!
+
 	
     return float4(surfaceColor, 1);
 }
