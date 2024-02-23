@@ -34,22 +34,29 @@ Texture2D RoughTexture : register(t3);
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {    
-    float3 N = input.normal = normalize(input.normal); // Must be normalized here or before
-    float3 T = normalize(input.tangent); // Must be normalized here or before
+    // normalize normal and tangent
+    input.normal = normalize(input.normal);
+    input.tangent = normalize(input.tangent);
+
+    // uv scaling and offset
+    input.uv = input.uv * uvScale + uvOffset;
+    
+    // normal mapping things
+    float3 N = input.normal; // Must be normalized here or before
+    float3 T = input.tangent; // Must be normalized here or before
     
     T = normalize(T - N * dot(T, N)); // Gram-Schmidt assumes T&N are normalized!
     float3 B = cross(T, N);
     float3x3 TBN = float3x3(T, B, N);
-
+    
+     // unpack and sample normal
     float3 unpackedNormal = NormalTexture.Sample(BasicSampler, input.uv).rgb * 2 - 1;
-    unpackedNormal = normalize(unpackedNormal); // Don’t forget to normalize!
-
-    input.normal = mul(unpackedNormal, TBN); // Note multiplication order!
-
+    input.normal = normalize(mul(unpackedNormal, TBN)); 
+    
     float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f); // surfaceColor only consists of albedo texture
     float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
     float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
 
 
-    return float4(1, 1, 1, 1);
+    return float4(surfaceColor, 1);
 }

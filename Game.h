@@ -8,7 +8,7 @@
 #include <DirectXMath.h>
 #include <memory>
 #include <vector>
-#include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
+#include <wrl/client.h> // Used for ComPtr -a smart pointer for COM objects
 
 class Game 
 	: public DXCore
@@ -59,5 +59,19 @@ private:
 
 	// wood material
 	std::shared_ptr<Material> woodMaterial;
+
+	//// **** lights ****
+
+	//// directional
+	//Light directionalLight1;
+	//Light directionalLight2;
+	//Light directionalLight3;
+
+	//// point
+	//Light pointLight1;
+	//Light pointLight2;
+
+	//// light vector
+	//std::vector<Light> lights;
 };
 

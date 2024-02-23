@@ -41,6 +41,15 @@ Game::Game(HINSTANCE hInstance)
 	vbView = {};
 
 	entities = {};
+
+	/*directionalLight1 = {};
+	directionalLight2 = {};
+	directionalLight3 = {};
+
+	pointLight1 = {};
+	pointLight2 = {};
+
+	lights = {};*/
 }
 
 // --------------------------------------------------------
@@ -78,8 +87,6 @@ void Game::Init()
 	CreateGeometry();
 	
 	CreateCamera();
-
-	//LoadMaterials();
 }
 
 
@@ -119,6 +126,48 @@ void Game::CreateGeometry()
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
 	unsigned int indices[] = { 0, 1, 2 };
+
+	//// **** lights ****
+
+	//// directional lights
+	//{
+	//	// 1: primary light source
+	//	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	//	directionalLight1.Direction = XMFLOAT3(0, -.75, 0);
+	//	directionalLight1.Intensity = 1.0f;
+	//	directionalLight1.Color = XMFLOAT3(1, 1, 1);
+
+	//	// 2
+	//	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	//	directionalLight2.Direction = XMFLOAT3(1, 0, 0);
+	//	directionalLight2.Intensity = 1.0f;
+	//	directionalLight2.Color = XMFLOAT3(1.0f, 0.3f, 0.3f);
+
+	//	// 3
+	//	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	//	directionalLight3.Direction = XMFLOAT3(0, 0, 1);
+	//	directionalLight3.Intensity = 1.0f;
+	//	directionalLight3.Color = XMFLOAT3(1, 1, 1);
+	//}
+
+	//// point lights
+	//{
+	//	pointLight1.Type = LIGHT_TYPE_POINT;
+	//	pointLight1.Range;
+	//	pointLight1.Intensity = 1.0f;
+	//	pointLight1.Color = XMFLOAT3(0.7f, 0.1f, 0.7f); // purple
+
+	//	pointLight2.Type = LIGHT_TYPE_POINT;
+	//	pointLight2.Range;
+	//	pointLight2.Intensity = 1.0f;
+	//	pointLight2.Color = XMFLOAT3(1.0f, 0.4f, 0.7f); // pink?
+	//}
+
+	//lights.push_back(directionalLight1);
+	//lights.push_back(directionalLight2);
+	//lights.push_back(directionalLight3);
+	//lights.push_back(pointLight1);
+	//lights.push_back(pointLight2);
 
 	LoadAndCreateAssets();
 
@@ -495,9 +544,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		// helper variable to make things easy :)
 		DX12Helper& dx12Helper = DX12Helper::GetInstance();
 
-		// Set overall pipeline state
-		commandList->SetPipelineState(pipelineState.Get());
-
 		// Root sig (must happen before root descriptor table)
 		commandList->SetGraphicsRootSignature(rootSignature.Get());
 
@@ -510,8 +556,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		commandList->OMSetRenderTargets(1, &rtvHandles[currentSwapBuffer], true, &dsvHandle);
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
-		//commandList->IASetVertexBuffers(0, 1, &vbView);
-		//commandList->IASetIndexBuffer(&ibView);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
@@ -524,14 +568,17 @@ void Game::Draw(float deltaTime, float totalTime)
 
 			// vertex shader data
 
-			VertexShaderExternalData vsed = {};
+			{
+				VertexShaderExternalData vsed = {};
 
-			vsed.worldMatrix = e.GetTransform()->GetWorldMatrix();
-			vsed.viewMatrix = camera->GetView();
-			vsed.projMatrix = camera->GetProjection();
+				vsed.worldMatrix = e.GetTransform()->GetWorldMatrix();
+				vsed.worldInverseTranspose = e.GetTransform()->GetWorldInvTranspose();
+				vsed.viewMatrix = camera->GetView();
+				vsed.projMatrix = camera->GetProjection();
 
-			D3D12_GPU_DESCRIPTOR_HANDLE handle = dx12Helper.FillNextConstantBufferAndGetGPUDescriptorHandle((void*)(&vsed), sizeof(VertexShaderExternalData));
-			commandList->SetGraphicsRootDescriptorTable(0, handle);
+				D3D12_GPU_DESCRIPTOR_HANDLE handle = dx12Helper.FillNextConstantBufferAndGetGPUDescriptorHandle((void*)(&vsed), sizeof(VertexShaderExternalData));
+				commandList->SetGraphicsRootDescriptorTable(0, handle); 
+			}
 
 			D3D12_VERTEX_BUFFER_VIEW this_vbv = e.GetMesh()->GetVertexBufferView();
 			D3D12_INDEX_BUFFER_VIEW this_ibv = e.GetMesh()->GetIndexBufferView();

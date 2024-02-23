@@ -11,8 +11,6 @@ Material::Material(Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipelineState, D
 
 	// initialize other values
 	this->finalized = false;
-
-
 }
 
 Material::~Material()
