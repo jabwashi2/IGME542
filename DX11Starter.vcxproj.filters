@@ -100,5 +100,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="ShaderStructsInclude.hlsli" />
+    <None Include="ShaderFunctionsInclude.hlsli" />
   </ItemGroup>
 </Project>
