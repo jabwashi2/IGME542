@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "GameEntity.h"
 #include "Material.h"
+#include "Lights.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -60,18 +61,8 @@ private:
 	// wood material
 	std::shared_ptr<Material> woodMaterial;
 
-	//// **** lights ****
-
-	//// directional
-	//Light directionalLight1;
-	//Light directionalLight2;
-	//Light directionalLight3;
-
-	//// point
-	//Light pointLight1;
-	//Light pointLight2;
-
-	//// light vector
-	//std::vector<Light> lights;
+	// lights!
+	int lightCount;
+	std::vector<Light> lights;
 };
 
