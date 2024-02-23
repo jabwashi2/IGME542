@@ -56,7 +56,11 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f); // surfaceColor only consists of albedo texture
     float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
     float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
+    
+    float3 finalColor = surfaceColor;
+    
+    
 
 
-    return float4(surfaceColor, 1);
+    return float4(pow(finalColor, 1.0f / 2.2f), 1);
 }
