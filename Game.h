@@ -33,6 +33,7 @@ private:
 	void CreateGeometry();
 	void CreateRootSigAndPipelineState();
 	void CreateCamera();
+	void CreateLights();
 	void LoadAndCreateAssets();
 	void LoadMaterials();
 

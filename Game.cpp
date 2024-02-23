@@ -5,6 +5,7 @@
 #include "DX12Helper.h"
 #include "BufferStructs.h"
 #include "Camera.h"
+#include "Lights.h"
 
 
 // Needed for a helper function to load pre-compiled shader files
@@ -121,6 +122,8 @@ void Game::CreateGeometry()
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
 	unsigned int indices[] = { 0, 1, 2 };
+
+	CreateLights();
 
 	LoadAndCreateAssets();
 
@@ -338,6 +341,62 @@ void Game::CreateCamera()
 		XM_PIDIV4, // pi/4
 		float(this->windowWidth) / this->windowHeight
 	);
+}
+
+void Game::CreateLights()
+{
+	// 3 directional lights, 2 point lights = 5 total lights
+
+	// directional lights
+
+	// 1: primary light source
+	Light directionalLight1 = {};
+	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight1.Direction = XMFLOAT3(0, -.75, 0);
+	directionalLight1.Intensity = 1.0f;
+	directionalLight1.Color = XMFLOAT3(1, 1, 1);
+
+	// 2
+	Light directionalLight2 = {};
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Direction = XMFLOAT3(1, 0, 0);
+	directionalLight2.Intensity = 1.0f;
+	directionalLight2.Color = XMFLOAT3(1.0f, 0.3f, 0.3f);
+
+	// 3
+	Light directionalLight3 = {};
+	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight3.Direction = XMFLOAT3(0, 0, 1);
+	directionalLight3.Intensity = 1.0f;
+	directionalLight3.Color = XMFLOAT3(1, 1, 1);
+
+
+	// point lights
+
+	// 4
+	Light pointLight1 = {};
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Range;
+	pointLight1.Intensity = 1.0f;
+	pointLight1.Color = XMFLOAT3(0.7f, 0.1f, 0.7f); // purple
+
+	// 5
+	Light pointLight2 = {};
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Range;
+	pointLight2.Intensity = 1.0f;
+	pointLight2.Color = XMFLOAT3(1.0f, 0.4f, 0.7f); // pink?
+
+
+	// adding lights to list
+	lights.push_back(directionalLight1);
+	lights.push_back(directionalLight2);
+	lights.push_back(directionalLight3);
+	lights.push_back(pointLight1);
+	lights.push_back(pointLight2);
+
+	// make sure list is the right size (thank you Chris this is so cool)
+	lights.resize(TOTAL_LIGHTS);
 }
 
 void Game::LoadAndCreateAssets()
