@@ -1,5 +1,6 @@
 
 #include "ShaderStructsInclude.hlsli"
+#include "ShaderFunctionsInclude.hlsli"
 
 #define TOTAL_LIGHTS 5
 
@@ -56,11 +57,25 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f); // surfaceColor only consists of albedo texture
     float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
     float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
+    float3 specularColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
     
     float3 finalColor = surfaceColor;
     
-    
+    float3 finalLight;
+    for (int i = 0; i < TOTAL_LIGHTS; i++)
+    {
+        if (lights[i].Type == LIGHT_TYPE_DIRECTIONAL)
+        {
+            finalLight = DirLight(lights[i], input.normal, surfaceColor, roughness, cameraPosition, input.worldPosition, specularColor, metalness);
+        }
+        if (lights[i].Type == LIGHT_TYPE_POINT)
+        {
+            finalLight = PointLight(lights[i], input.normal, surfaceColor, roughness, cameraPosition, input.worldPosition, specularColor, metalness);
+        }
 
+        finalColor += finalLight;
+    }
+    
 
     return float4(pow(finalColor, 1.0f / 2.2f), 1);
 }
