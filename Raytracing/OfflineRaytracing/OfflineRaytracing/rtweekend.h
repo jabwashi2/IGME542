@@ -3,6 +3,8 @@
 #ifndef RTWEEKEND_H
 #define RTWEEKEND_H
 
+#include "interval.h"
+
 #include <cmath>
 #include <limits>
 #include <memory>
