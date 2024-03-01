@@ -99,7 +99,6 @@ private:
         if (depth <= 0)
             return color(0, 0, 0);
 
-
         if (world.hit(r, interval(0, infinity), rec)) {
             vec3 direction = random_on_hemisphere(rec.normal);
             return 0.5 * ray_color(ray(rec.p, direction), depth - 1, world);
