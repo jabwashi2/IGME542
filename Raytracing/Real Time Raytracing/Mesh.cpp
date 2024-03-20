@@ -3,6 +3,7 @@
 #include "Vertex.h" // holds our custom Vertex struct
 #include "Input.h"
 #include "PathHelpers.h"
+#include "RaytracingHelper.h"
 
 #include <d3d11.h> // for referencing Direct3D stuff
 #include <wrl/client.h> // when using ComPtrs for Direct3D objects
@@ -291,7 +292,11 @@ void Mesh::CreateBuffers(Vertex* _vertices, int numVertices, unsigned int* _indi
 
 	ibView.Format = DXGI_FORMAT_R32_UINT;
 	ibView.SizeInBytes = sizeof(unsigned int) * numIndices;
-	ibView.BufferLocation = indexBuffer->GetGPUVirtualAddress();	
+	ibView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
+
+	// Create the raytracing acceleration structure for this mesh
+	raytracingData =
+		RaytracingHelper::GetInstance().CreateBottomLevelAccelerationStructureForMesh(this);
 }
 // --------------------------------------------------------
 // Author: Chris Cascioli

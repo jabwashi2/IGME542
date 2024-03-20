@@ -6,6 +6,7 @@
 #include "BufferStructs.h"
 #include "Camera.h"
 #include "Lights.h"
+#include "RaytracingHelper.h"
 
 
 // Needed for a helper function to load pre-compiled shader files
@@ -65,6 +66,8 @@ Game::~Game()
 	// We need to wait here until the GPU
 	// is actually done with its work
 	DX12Helper::GetInstance().WaitForGPU();
+
+	delete& RaytracingHelper::GetInstance();
 }
 
 // --------------------------------------------------------
