@@ -20,3 +20,17 @@ struct PixelShaderExternalData
 	int lightCount;
 	Light lights[TOTAL_LIGHTS];
 };
+
+// Overall scene data for raytracing
+struct RaytracingSceneData
+{
+	DirectX::XMFLOAT4X4 inverseViewProjection;
+	DirectX::XMFLOAT3 cameraPosition;
+};
+
+// Ensure this matches Raytracing shader define!
+#define MAX_INSTANCES_PER_BLAS 100
+struct RaytracingEntityData
+{
+	DirectX::XMFLOAT4 color[MAX_INSTANCES_PER_BLAS];
+};
