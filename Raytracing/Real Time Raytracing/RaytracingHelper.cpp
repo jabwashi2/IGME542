@@ -652,7 +652,7 @@ Mesh::MeshRaytracingData RaytracingHelper::CreateBottomLevelAccelerationStructur
 // game entities (a "scene"), using the meshes and transforms
 // of each entity for the BLAS instances.
 // --------------------------------------------------------
-void RaytracingHelper::CreateTopLevelAccelerationStructureForScene(std::vector<std::shared_ptr<GameEntity>> scene)
+void RaytracingHelper::CreateTopLevelAccelerationStructureForScene(std::vector<GameEntity> scene)
 {
 	if (scene.size() == 0)
 		return;
@@ -670,11 +670,11 @@ void RaytracingHelper::CreateTopLevelAccelerationStructureForScene(std::vector<s
 	for (size_t i = 0; i < scene.size(); i++)
 	{
 		// Grab this entity's transform and transpose to column major
-		DirectX::XMFLOAT4X4 transform = scene[i]->GetTransform()->GetWorldMatrix();
+		DirectX::XMFLOAT4X4 transform = scene[i].GetTransform()->GetWorldMatrix();
 		XMStoreFloat4x4(&transform, XMMatrixTranspose(XMLoadFloat4x4(&transform)));
 
 		// Grab this mesh's index in the shader table
-		std::shared_ptr<Mesh> mesh = scene[i]->GetMesh();
+		std::shared_ptr<Mesh> mesh = scene[i].GetMesh();
 		unsigned int meshBlasIndex = mesh->GetRaytracingData().HitGroupIndex;
 
 		// Create this description and add to our overall set of descriptions
@@ -690,7 +690,7 @@ void RaytracingHelper::CreateTopLevelAccelerationStructureForScene(std::vector<s
 		// Set up the entity data for this entity, too
 		// - mesh index tells us which cbuffer
 		// - instance ID tells us which instance in that cbuffer
-		XMFLOAT3 c = scene[i]->GetMaterial()->GetColorTint();
+		XMFLOAT3 c = scene[i].GetMaterial()->GetColorTint();
 		entityData[meshBlasIndex].color[id.InstanceID] = XMFLOAT4(c.x, c.y, c.z, (float)((i + 1) % 2)); // Using alpha channel as "roughness"
 
 		// On to the next instance for this mesh

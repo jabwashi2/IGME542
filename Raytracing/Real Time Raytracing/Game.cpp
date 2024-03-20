@@ -76,6 +76,15 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
+	// Attempt to initialize DXR
+	RaytracingHelper::GetInstance().Initialize(
+		windowWidth,
+		windowHeight,
+		device,
+		commandQueue,
+		commandList,
+		FixPath(L"Raytracing.cso"));
+
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 
@@ -129,6 +138,9 @@ void Game::CreateGeometry()
 	CreateLights();
 
 	LoadAndCreateAssets();
+
+	// Meshes create their own BLAS's; we just need to create the TLAS for the scene here
+	RaytracingHelper::GetInstance().CreateTopLevelAccelerationStructureForScene(entities);
 
 	// Create the two buffers
 	vertexBuffer = DX12Helper::GetInstance().CreateStaticBuffer(sizeof(Vertex), ARRAYSIZE(vertices), vertices);
@@ -494,6 +506,7 @@ void Game::OnResize()
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 	camera->UpdateProjectionMatrix(camera->GetFOV(), camera->GetAspectRatio());
+	RaytracingHelper::GetInstance().ResizeOutputUAV(windowWidth, windowHeight);
 }
 
 // --------------------------------------------------------
@@ -524,7 +537,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Grab the current back buffer for this frame
 	Microsoft::WRL::ComPtr<ID3D12Resource> currentBackBuffer = backBuffers[currentSwapBuffer];
 
-	// Clearing the render target
+	/*// Clearing the render target
 	{
 		// Transition the back buffer from present to render target
 		D3D12_RESOURCE_BARRIER rb = {};
@@ -552,14 +565,14 @@ void Game::Draw(float deltaTime, float totalTime)
 			1.0f, // Max depth = 1.0f
 			0, // Not clearing stencil, but need a value
 			0, 0); // No scissor rects
-	}
+	}*/
 
 	// Rendering here!
 	{
 		// helper variable to make things easy :)
 		DX12Helper& dx12Helper = DX12Helper::GetInstance();
 
-		// Root sig (must happen before root descriptor table)
+		/*// Root sig (must happen before root descriptor table)
 		commandList->SetGraphicsRootSignature(rootSignature.Get());
 
 		// set the descriptor heap
@@ -571,10 +584,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		commandList->OMSetRenderTargets(1, &rtvHandles[currentSwapBuffer], true, &dsvHandle);
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);*/
 
 
-		// entity rendering loop
+		/*// entity rendering loop
 		for (auto& e : entities) {
 
 			std::shared_ptr<Material> mat = e.GetMaterial();
@@ -626,13 +639,13 @@ void Game::Draw(float deltaTime, float totalTime)
 			// Draw
 			commandList->DrawIndexedInstanced(e.GetMesh()->GetIndexCount(), 1, 0, 0, 0);
 		}
-
+		*/
 
 	}
 
 	// Present
 	{
-		// Transition back to present
+		/*// Transition back to present
 		D3D12_RESOURCE_BARRIER rb = {};
 		rb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		rb.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -640,10 +653,22 @@ void Game::Draw(float deltaTime, float totalTime)
 		rb.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		rb.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 		rb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		commandList->ResourceBarrier(1, &rb);
+		commandList->ResourceBarrier(1, &rb);*/
 
+		// reset command allocator
+		commandAllocator->Reset();
+		//commandList->Reset(commandAllocator, 0);
 		// Must occur BEFORE present
 		DX12Helper::GetInstance().CloseExecuteAndResetCommandList();
+
+		// Update raytracing accel structure
+		RaytracingHelper::GetInstance().
+			CreateTopLevelAccelerationStructureForScene(entities);
+
+		// Perform raytrace, including execution of command list
+		RaytracingHelper::GetInstance().Raytrace(
+			camera,
+			backBuffers[currentSwapBuffer]);
 
 		// Present the current back buffer
 		bool vsyncNecessary = vsync || !deviceSupportsTearing || isFullscreen;
