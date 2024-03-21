@@ -680,6 +680,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		currentSwapBuffer++;
 		if (currentSwapBuffer >= numBackBuffers)
 			currentSwapBuffer = 0;
+
+		DX12Helper::GetInstance().WaitForGPU();
+
 	}
 
 }
