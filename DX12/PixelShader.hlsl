@@ -59,7 +59,8 @@ float4 main(VertexToPixel input) : SV_TARGET
     float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
     float3 specularColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
     
-    float3 finalColor = surfaceColor;
+    float3 finalColor = float3(0, 0, 0);
+    //float3 finalColor = surfaceColor;
     
     float3 finalLight;
     for (int i = 0; i < TOTAL_LIGHTS; i++)
