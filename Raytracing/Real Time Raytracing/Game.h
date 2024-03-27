@@ -32,6 +32,8 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 
+	const int NUM_SPHERES = 10;
+
 	void LoadMeshes();
 	void CreateGeometry();
 	void CreateAssets();
