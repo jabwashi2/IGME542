@@ -95,7 +95,7 @@ void Game::Init()
 	LoadMaterials();
 
 	CreateGeometry();
-	
+
 	CreateCamera();
 }
 
@@ -123,9 +123,9 @@ void Game::CreateGeometry()
 {
 	// Create some temporary variables to represent colors
 	// - Not necessary, just makes things more readable
-	XMFLOAT4 red	= XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green	= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue	= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in CPU memory
@@ -177,15 +177,41 @@ void Game::CreateAssets()
 {
 	// don't have to access the mesh vector directly! use FindMesh() helper function
 
+	entities.push_back(std::make_shared<GameEntity>("leftCylinder", FindMesh("cylinder"), bronzeMaterial));
+	FindEntity("leftCylinder")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 3.0f, 0.0f));
+
+	entities.push_back(std::make_shared<GameEntity>("rightCylinder", FindMesh("cylinder"), bronzeMaterial));
+	FindEntity("rightCylinder")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 3.0f, 0.0f));
+
+	entities.push_back(std::make_shared<GameEntity>("centerTorus", FindMesh("torus"), bronzeMaterial));
+	FindEntity("centerTorus")->GetTransform()->SetPosition(XMFLOAT3(0.0f, -1.0f, 0.0f));
+	FindEntity("centerTorus")->GetTransform()->Scale(XMFLOAT3(2.0f, 2.0f, 2.0f));
+
+	for (int i = 0; i < NUM_SPHERES; i++) {
+		std::string sName = "sphere" + i;
+		std::shared_ptr<Material> sMaterial;
+
+		if (i % 2) {
+			sMaterial = bronzeMaterial;
+		}
+		else {
+			sMaterial = woodMaterial;
+		}
+
+		entities.push_back(std::make_shared<GameEntity>(sName, FindMesh("sphere"), sMaterial));
+		FindEntity(sName)->GetTransform()->SetPosition(XMFLOAT3((rand() % 10) - 5, (rand() % 10) - 4, 0.0f));
+	}
+
 	// floor
 	entities.push_back(std::make_shared<GameEntity>("floor", FindMesh("cube"), woodMaterial));
 	FindEntity("floor")->GetTransform()->SetPosition(XMFLOAT3(0.0f, -6.0f, 0.0f));
+	FindEntity("floor")->GetTransform()->Scale(XMFLOAT3(15.0f, 1.0f, 15.0f));
 }
 
 void Game::LoadMaterials()
 {
 	//DX12Helper::GetInstance();
-	
+
 	// make 2 materials, each has 4 textures:
 	// - albedo
 	// - metal
@@ -238,7 +264,7 @@ void Game::LoadMaterials()
 void Game::CreateCamera()
 {
 	camera = std::make_shared<Camera>(
-		0.0f, 0.0f, -5.0f,
+		0.0f, 0.0f, -15.0f,
 		5.0f,
 		1.0f,
 		XM_PIDIV4, // pi/4
@@ -506,6 +532,7 @@ std::shared_ptr<Mesh> Game::FindMesh(std::string meshName)
 	return myMesh;
 }
 
+// looks through list of created entities and finds the one that matches
 std::shared_ptr<GameEntity> Game::FindEntity(std::string entityName)
 {
 	std::shared_ptr<GameEntity> myEntity = {};
@@ -543,7 +570,21 @@ void Game::Update(float deltaTime, float totalTime)
 	camera->Update(deltaTime);
 
 	// moving objects
-	//FindEntity("floor")->GetTransform()->Scale(XMFLOAT3(15.0f, 1.0f, 15.0f));
+	FindEntity("centerTorus")->GetTransform()->Rotate(2.0f * deltaTime, -2.0f * deltaTime, 0.0f);
+
+	FindEntity("leftCylinder")->GetTransform()->Rotate(-2.0f * deltaTime, -2.0f * deltaTime, 0.0f);
+	FindEntity("rightCylinder")->GetTransform()->Rotate(2.0f * deltaTime, 2.0f * deltaTime, 0.0f);
+
+	for (int i = 0; i < NUM_SPHERES; i++) {
+		std::string sName = "sphere" + i;
+
+		XMFLOAT3 pos = FindEntity(sName)->GetTransform()->GetPosition();
+
+		pos.x = sin((totalTime + i) * 0.7f) * 5;
+		pos.z = sin((totalTime + i) * 0.3f) * 5;
+
+		FindEntity(sName)->GetTransform()->SetPosition(pos);
+	}
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))

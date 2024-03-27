@@ -12,7 +12,7 @@
 #include <wrl/client.h> // Used for ComPtr -a smart pointer for COM objects
 #include <string>
 
-class Game 
+class Game
 	: public DXCore
 {
 
@@ -31,6 +31,8 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
+
+	const int NUM_SPHERES = 10;
 
 	void LoadMeshes();
 	void CreateGeometry();
