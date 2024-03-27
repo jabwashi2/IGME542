@@ -5,6 +5,10 @@
 
 #include <d3d11.h> // for referencing Direct3D stuff
 #include <wrl/client.h> // when using ComPtrs for Direct3D objects
+#include <string>
+
+// mesh naming convention: camel case if name is more than one word
+// ex: "torus" is good, "Torus" is not, "redTorus" is good
 
 class Mesh
 {
@@ -18,11 +22,14 @@ public:
 		unsigned int HitGroupIndex = 0;
 	};
 
+	// name of this mesh
+	std::string name;
+
 	// takes vertices and indices to create mesh
-	Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList);
+	Mesh(std::string _name, Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList);
 
 	// takes filename to create mesh
-	Mesh(const char* fileName, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList);
+	Mesh(std::string _name, const char* fileName, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList);
 
 	~Mesh();
 

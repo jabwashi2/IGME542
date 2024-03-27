@@ -90,6 +90,8 @@ void Game::Init()
 
 	CreateRootSigAndPipelineState();
 
+	LoadMeshes();
+
 	LoadMaterials();
 
 	CreateGeometry();
@@ -97,10 +99,26 @@ void Game::Init()
 	CreateCamera();
 }
 
+#pragma region helper functions
 
-// --------------------------------------------------------
-// Creates the geometry we're going to draw - a single triangle for now
-// --------------------------------------------------------
+void Game::LoadMeshes()
+{
+	// cube
+	meshes.push_back(std::make_shared<Mesh>("cube", FixPath("../../Assets/cube.obj").c_str(), device, commandList));
+
+	// cylinder
+	meshes.push_back(std::make_shared<Mesh>("cylinder", FixPath("../../Assets/cylinder.obj").c_str(), device, commandList));
+
+	// helix
+	meshes.push_back(std::make_shared<Mesh>("helix", FixPath("../../Assets/helix.obj").c_str(), device, commandList));
+
+	// sphere
+	meshes.push_back(std::make_shared<Mesh>("sphere", FixPath("../../Assets/sphere.obj").c_str(), device, commandList));
+
+	// torus
+	meshes.push_back(std::make_shared<Mesh>("torus", FixPath("../../Assets/torus.obj").c_str(), device, commandList));
+}
+
 void Game::CreateGeometry()
 {
 	// Create some temporary variables to represent colors
@@ -137,7 +155,7 @@ void Game::CreateGeometry()
 
 	CreateLights();
 
-	LoadAndCreateAssets();
+	CreateAssets();
 
 	// Meshes create their own BLAS's; we just need to create the TLAS for the scene here
 	RaytracingHelper::GetInstance().CreateTopLevelAccelerationStructureForScene(entities);
@@ -153,6 +171,135 @@ void Game::CreateGeometry()
 	ibView.Format = DXGI_FORMAT_R32_UINT;
 	ibView.SizeInBytes = sizeof(unsigned int) * ARRAYSIZE(indices);
 	ibView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
+}
+
+void Game::CreateAssets()
+{
+	// don't have to access the mesh vector directly! use FindMesh() helper function
+
+	// floor
+	entities.push_back(std::make_shared<GameEntity>("floor", FindMesh("cube"), woodMaterial));
+	FindEntity("floor")->GetTransform()->SetPosition(XMFLOAT3(0.0f, -6.0f, 0.0f));
+}
+
+void Game::LoadMaterials()
+{
+	//DX12Helper::GetInstance();
+	
+	// make 2 materials, each has 4 textures:
+	// - albedo
+	// - metal
+	// - normal
+	// - roughness
+
+	// material constructor expects pipeline state, float3 colortint, float2 uvscale, float2 uvoffset
+
+	// bronze
+	bronzeMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, .5, 0));
+
+	{
+		// bronze textures
+		D3D12_CPU_DESCRIPTOR_HANDLE bAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_albedo.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE bMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_metal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE bNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_normal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE bRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_roughness.png").c_str());
+
+		// giving textures to materials
+		bronzeMaterial->AddTexture(bAlbedo, 0);
+		bronzeMaterial->AddTexture(bMetal, 1);
+		bronzeMaterial->AddTexture(bNormal, 2);
+		bronzeMaterial->AddTexture(bRough, 3);
+	}
+
+	// finalize the material
+	bronzeMaterial->FinalizeMaterial();
+
+	// wood
+	woodMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, .3, .3));
+
+	{
+		// wood textures
+		D3D12_CPU_DESCRIPTOR_HANDLE wAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_albedo.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE wMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_metal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE wNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_normal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE wRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_roughness.png").c_str());
+
+		// giving textures to materials
+		woodMaterial->AddTexture(wAlbedo, 0);
+		woodMaterial->AddTexture(wMetal, 1);
+		woodMaterial->AddTexture(wNormal, 2);
+		woodMaterial->AddTexture(wRough, 3);
+	}
+
+	// finalize the material
+	woodMaterial->FinalizeMaterial();
+}
+
+void Game::CreateCamera()
+{
+	camera = std::make_shared<Camera>(
+		0.0f, 0.0f, -5.0f,
+		5.0f,
+		1.0f,
+		XM_PIDIV4, // pi/4
+		float(this->windowWidth) / this->windowHeight
+	);
+}
+
+void Game::CreateLights()
+{
+	// 3 directional lights, 2 point lights = 5 total lights
+
+	// directional lights
+
+	// 1: primary light source
+	Light directionalLight1 = {};
+	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight1.Direction = XMFLOAT3(0, -.75, 0);
+	directionalLight1.Intensity = 1.0f;
+	directionalLight1.Color = XMFLOAT3(1, 1, 1);
+
+	// 2
+	Light directionalLight2 = {};
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Direction = XMFLOAT3(1, 0, 0);
+	directionalLight2.Intensity = 1.0f;
+	directionalLight2.Color = XMFLOAT3(1.0f, 0.3f, 0.3f);
+
+	// 3
+	Light directionalLight3 = {};
+	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight3.Direction = XMFLOAT3(0, 0, 1);
+	directionalLight3.Intensity = 1.0f;
+	directionalLight3.Color = XMFLOAT3(1, 1, 1);
+
+
+	// point lights
+
+	// 4
+	Light pointLight1 = {};
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Range;
+	pointLight1.Intensity = 1.0f;
+	pointLight1.Color = XMFLOAT3(0.7f, 0.1f, 0.7f); // purple
+
+	// 5
+	Light pointLight2 = {};
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Range;
+	pointLight2.Intensity = 1.0f;
+	pointLight2.Color = XMFLOAT3(1.0f, 0.4f, 0.7f); // pink?
+
+
+	// adding lights to list
+	lights.push_back(directionalLight1);
+	lights.push_back(directionalLight2);
+	lights.push_back(directionalLight3);
+	lights.push_back(pointLight1);
+	lights.push_back(pointLight2);
+
+	// make sure list is the right size (thank you Chris this is so cool)
+	lights.resize(TOTAL_LIGHTS);
 }
 
 // --------------------------------------------------------
@@ -345,174 +492,34 @@ void Game::CreateRootSigAndPipelineState()
 	}
 }
 
-// *** helper functions
-
-void Game::CreateCamera()
+// looks through list of available meshes and finds the one that matches the name inserted
+std::shared_ptr<Mesh> Game::FindMesh(std::string meshName)
 {
-	camera = std::make_shared<Camera>(
-		0.0f, 0.0f, -5.0f,
-		5.0f,
-		1.0f,
-		XM_PIDIV4, // pi/4
-		float(this->windowWidth) / this->windowHeight
-	);
-}
+	std::shared_ptr<Mesh> myMesh = {};
 
-void Game::CreateLights()
-{
-	// 3 directional lights, 2 point lights = 5 total lights
-
-	// directional lights
-
-	// 1: primary light source
-	Light directionalLight1 = {};
-	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight1.Direction = XMFLOAT3(0, -.75, 0);
-	directionalLight1.Intensity = 1.0f;
-	directionalLight1.Color = XMFLOAT3(1, 1, 1);
-
-	// 2
-	Light directionalLight2 = {};
-	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight2.Direction = XMFLOAT3(1, 0, 0);
-	directionalLight2.Intensity = 1.0f;
-	directionalLight2.Color = XMFLOAT3(1.0f, 0.3f, 0.3f);
-
-	// 3
-	Light directionalLight3 = {};
-	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight3.Direction = XMFLOAT3(0, 0, 1);
-	directionalLight3.Intensity = 1.0f;
-	directionalLight3.Color = XMFLOAT3(1, 1, 1);
-
-
-	// point lights
-
-	// 4
-	Light pointLight1 = {};
-	pointLight1.Type = LIGHT_TYPE_POINT;
-	pointLight1.Range;
-	pointLight1.Intensity = 1.0f;
-	pointLight1.Color = XMFLOAT3(0.7f, 0.1f, 0.7f); // purple
-
-	// 5
-	Light pointLight2 = {};
-	pointLight2.Type = LIGHT_TYPE_POINT;
-	pointLight2.Range;
-	pointLight2.Intensity = 1.0f;
-	pointLight2.Color = XMFLOAT3(1.0f, 0.4f, 0.7f); // pink?
-
-
-	// adding lights to list
-	lights.push_back(directionalLight1);
-	lights.push_back(directionalLight2);
-	lights.push_back(directionalLight3);
-	lights.push_back(pointLight1);
-	lights.push_back(pointLight2);
-
-	// make sure list is the right size (thank you Chris this is so cool)
-	lights.resize(TOTAL_LIGHTS);
-}
-
-void Game::LoadAndCreateAssets()
-{
-
-	// loading in assets + creating entities
-	{
-		//cube
-		//cylinder
-		//helix
-		//sphere
-		//torus
-
-		//cubes
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList), bronzeMaterial));
-		entities[0].GetTransform()->SetPosition(XMFLOAT3(-6.0f, 0.0f, 0.0f));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList), bronzeMaterial));
-		entities[1].GetTransform()->SetPosition(XMFLOAT3(-6.0f, -4.0f, 0.0f));
-
-		// cylinders
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cylinder.obj").c_str(), device, commandList), woodMaterial));
-		entities[2].GetTransform()->SetPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cylinder.obj").c_str(), device, commandList), woodMaterial));
-		entities[3].GetTransform()->SetPosition(XMFLOAT3(-3.0f, 4.0f, 0.0f));
-
-		// helixes
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/helix.obj").c_str(), device, commandList), bronzeMaterial));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/helix.obj").c_str(), device, commandList), bronzeMaterial));
-		entities[5].GetTransform()->SetPosition(XMFLOAT3(entities[4].GetTransform()->GetPosition().x, -4.0f, 0.0f));
-
-		// spheres
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/sphere.obj").c_str(), device, commandList), woodMaterial));
-		entities[6].GetTransform()->SetPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/sphere.obj").c_str(), device, commandList), woodMaterial));
-		entities[7].GetTransform()->SetPosition(XMFLOAT3(3.0f, 4.0f, 0.0f));
-
-		// torus'
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/torus.obj").c_str(), device, commandList), bronzeMaterial));
-		entities[8].GetTransform()->SetPosition(XMFLOAT3(6.0f, 0.0f, 0.0f));
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/torus.obj").c_str(), device, commandList), bronzeMaterial));
-		entities[9].GetTransform()->SetPosition(XMFLOAT3(6.0f, -4.0f, 0.0f));
-
-		// Floor
-		entities.push_back(GameEntity(std::make_shared<Mesh>(FixPath("../../Assets/cube.obj").c_str(), device, commandList), woodMaterial));
-		entities[10].GetTransform()->SetPosition(XMFLOAT3(0.0f, -6.0f, 0.0f)); // move down on the y
-		entities[10].GetTransform()->Scale(XMFLOAT3(15.0f, 1.0f, 15.0f));// scale on the x and z
-	}
-}
-
-void Game::LoadMaterials()
-{
-	//DX12Helper::GetInstance();
-	
-	// make 2 materials, each has 4 textures:
-	// - albedo
-	// - metal
-	// - normal
-	// - roughness
-
-	// material constructor expects pipeline state, float3 colortint, float2 uvscale, float2 uvoffset
-
-	// bronze
-	bronzeMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, .5, 0));
-
-	{
-		// bronze textures
-		D3D12_CPU_DESCRIPTOR_HANDLE bAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_albedo.png").c_str());
-		D3D12_CPU_DESCRIPTOR_HANDLE bMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_metal.png").c_str());
-		D3D12_CPU_DESCRIPTOR_HANDLE bNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_normal.png").c_str());
-		D3D12_CPU_DESCRIPTOR_HANDLE bRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/bronze_roughness.png").c_str());
-
-		// giving textures to materials
-		bronzeMaterial->AddTexture(bAlbedo, 0);
-		bronzeMaterial->AddTexture(bMetal, 1);
-		bronzeMaterial->AddTexture(bNormal, 2);
-		bronzeMaterial->AddTexture(bRough, 3);
+	for (auto& m : meshes) {
+		if (m->name == meshName) {
+			myMesh = m;
+		}
 	}
 
-	// finalize the material
-	bronzeMaterial->FinalizeMaterial();
+	return myMesh;
+}
 
-	// wood
-	woodMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, .3, .3));
+std::shared_ptr<GameEntity> Game::FindEntity(std::string entityName)
+{
+	std::shared_ptr<GameEntity> myEntity = {};
 
-	{
-		// wood textures
-		D3D12_CPU_DESCRIPTOR_HANDLE wAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_albedo.png").c_str());
-		D3D12_CPU_DESCRIPTOR_HANDLE wMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_metal.png").c_str());
-		D3D12_CPU_DESCRIPTOR_HANDLE wNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_normal.png").c_str());
-		D3D12_CPU_DESCRIPTOR_HANDLE wRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/wood_roughness.png").c_str());
-
-		// giving textures to materials
-		woodMaterial->AddTexture(wAlbedo, 0);
-		woodMaterial->AddTexture(wMetal, 1);
-		woodMaterial->AddTexture(wNormal, 2);
-		woodMaterial->AddTexture(wRough, 3);
+	for (auto& e : entities) {
+		if (e->name == entityName) {
+			myEntity = e;
+		}
 	}
 
-	// finalize the material
-	woodMaterial->FinalizeMaterial();
+	return myEntity;
 }
+
+#pragma endregion
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size.
@@ -535,28 +542,8 @@ void Game::Update(float deltaTime, float totalTime)
 	// updating the camera
 	camera->Update(deltaTime);
 
-	// these translations are not very cleaned up right now but they will be later
-
-	// make the shapes spin!
-	for (int i = 0; i < entities.size() -1; i++)
-	{
-		// opposite directions!
-		if (i % 2) {
-			entities[i].GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
-		}
-		else {
-			entities[i].GetTransform()->Rotate(0.0f, -2.0f * deltaTime, 0.0f);
-		}
-	}
-
-	// spin cylinders and torus' some more
-	entities[2].GetTransform()->Rotate(2.0f * deltaTime, 0.0f, 0.0f);
-	entities[3].GetTransform()->Rotate(-2.0f * deltaTime, 0.0f, 0.0f);
-
-	entities[8].GetTransform()->Rotate(2.0f * deltaTime, 0.0f, 0.0f);
-	entities[9].GetTransform()->Rotate(-2.0f * deltaTime, 0.0f, 0.0f);
-
-	// moving the spheres
+	// moving objects
+	//FindEntity("floor")->GetTransform()->Scale(XMFLOAT3(15.0f, 1.0f, 15.0f));
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))

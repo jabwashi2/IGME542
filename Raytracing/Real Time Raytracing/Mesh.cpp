@@ -16,8 +16,10 @@
 
 using namespace DirectX;
 
-Mesh::Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList)
+Mesh::Mesh(std::string _name, Vertex* _vertices, int numVertices, unsigned int* _indices, int numIndices, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList)
 {
+	this->name = _name;
+
 	this->commandList = _commandList;
 	this->indices = numIndices;
 	this->vertices = numVertices;
@@ -31,8 +33,10 @@ Mesh::Mesh(Vertex* _vertices, int numVertices, unsigned int* _indices, int numIn
 	// creating buffers
 	CreateBuffers(_vertices, numVertices, _indices, numIndices, _device);
 }
-Mesh::Mesh(const char* fileName, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList)
+Mesh::Mesh(std::string _name, const char* fileName, Microsoft::WRL::ComPtr<ID3D12Device> _device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _commandList)
 {
+	this->name = _name;
+
 	// Author: Chris Cascioli
 	// Purpose: Basic .OBJ 3D model loading, supporting positions, uvs and normals
 	// 
