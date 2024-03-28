@@ -177,14 +177,21 @@ void Game::CreateAssets()
 	// don't have to access the mesh vector directly! use FindMesh() helper function
 
 	entities.push_back(std::make_shared<GameEntity>("leftCylinder", FindMesh("cylinder"), bronzeMaterial));
-	FindEntity("leftCylinder")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 3.0f, 0.0f));
+	FindEntity("leftCylinder")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 3.0f, 0.0f));
 
 	entities.push_back(std::make_shared<GameEntity>("rightCylinder", FindMesh("cylinder"), bronzeMaterial));
-	FindEntity("rightCylinder")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 3.0f, 0.0f));
+	FindEntity("rightCylinder")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 3.0f, 0.0f));
 
 	entities.push_back(std::make_shared<GameEntity>("centerTorus", FindMesh("torus"), bronzeMaterial));
 	FindEntity("centerTorus")->GetTransform()->SetPosition(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	FindEntity("centerTorus")->GetTransform()->Scale(XMFLOAT3(2.0f, 2.0f, 2.0f));
+
+	entities.push_back(std::make_shared<GameEntity>("leftHelix", FindMesh("helix"), woodMaterial));
+	FindEntity("leftHelix")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 0.0f, 0.0f));
+
+	entities.push_back(std::make_shared<GameEntity>("rightHelix", FindMesh("helix"), woodMaterial));
+	FindEntity("rightHelix")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 0.0f, 0.0f));
+
 
 	for (int i = 0; i < NUM_SPHERES; i++) {
 		std::string sName = "sphere" + i;
@@ -573,6 +580,9 @@ void Game::Update(float deltaTime, float totalTime)
 
 	FindEntity("leftCylinder")->GetTransform()->Rotate(-2.0f * deltaTime, -2.0f * deltaTime, 0.0f);
 	FindEntity("rightCylinder")->GetTransform()->Rotate(2.0f * deltaTime, 2.0f * deltaTime, 0.0f);
+
+	FindEntity("leftHelix")->GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
+	FindEntity("rightHelix")->GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
 
 	for (int i = 0; i < NUM_SPHERES; i++) {
 		std::string sName = "sphere" + i;
