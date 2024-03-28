@@ -21,6 +21,8 @@ static const uint VertexSizeInBytes = 11 * 4; // 11 floats total per vertex * 4 
 struct RayPayload
 {
     float3 color;
+    uint recursionDepth;
+    uint rayPerPixelIndex;
 };
 
 // Note: We'll be using the built-in BuiltInTriangleIntersectionAttributes struct
@@ -110,6 +112,19 @@ Vertex InterpolateVertices(uint triangleIndex, float3 barycentricData)
     return vert;
 }
 
+// Interpolates the triangle
+Vertex GetHitDetails(uint triangleIndex, BuiltInTriangleIntersectionAttributes hitAttributes)
+{
+	// Calculate the barycentric data for vertex interpolation
+    float3 barycentricData = float3(
+		1.0f - hitAttributes.barycentrics.x - hitAttributes.barycentrics.y,
+		hitAttributes.barycentrics.x,
+		hitAttributes.barycentrics.y);
+
+	// Get the interpolated vertex data
+    return InterpolateVertices(triangleIndex, barycentricData);
+}
+
 // Calculates an origin and direction from the camera fpr specific pixel indices
 void CalcRayFromCamera(float2 rayIndices, out float3 origin, out float3 direction)
 {
@@ -127,6 +142,38 @@ void CalcRayFromCamera(float2 rayIndices, out float3 origin, out float3 directio
     direction = normalize(worldPos.xyz - origin);
 }
 
+float3 RandomCosineWeightedHemisphere(float u0, float u1, float3 unitNormal)
+{
+    float a = u0 * 2 - 1;
+    float b = sqrt(1 - a * a);
+    float phi = 2.0f * PI * u1;
+
+    float x = unitNormal.x + b * cos(phi);
+    float y = unitNormal.y + b * sin(phi);
+    float z = unitNormal.z + a;
+
+	// float pdf = a / PI;
+    return float3(x, y, z);
+}
+
+float rand(float2 uv)
+{
+    return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+float2 rand2(float2 uv)
+{
+    float x = rand(uv);
+    float y = sqrt(1 - x * x);
+    return float2(x, y);
+}
+
+float3 rand3(float2 uv)
+{
+    return float3(
+		rand2(uv),
+		rand(uv.yx));
+}
 
 // === Shaders ===
 
@@ -138,24 +185,35 @@ void RayGen()
 	// Get the ray indices
     uint2 rayIndices = DispatchRaysIndex().xy;
 
-	// Calculate the ray data
-    float3 rayOrigin;
-    float3 rayDirection;
-    CalcRayFromCamera(rayIndices, rayOrigin, rayDirection);
-
-	// Set up final ray description
-    RayDesc ray;
-    ray.Origin = rayOrigin;
-    ray.Direction = rayDirection;
-    ray.TMin = 0.0001f;
-    ray.TMax = 1000.0f;
-
-	// Set up the payload for the ray
-	// This initializes the struct to all zeros
+    float3 totalColor = float3(0, 0, 0);
+    
+    // This initializes the struct to all zeros
     RayPayload payload = (RayPayload) 0;
+    
+    int raysPerPixel = 25;
+    
+    for (int r = 0; r < raysPerPixel; r++)
+    {
+        float2 adjustedIndices = (float2) rayIndices;
+        adjustedIndices += rand2((float) r / raysPerPixel);
+    
+	    // Calculate the ray data
+        float3 rayOrigin;
+        float3 rayDirection;
+        CalcRayFromCamera(rayIndices, rayOrigin, rayDirection);
 
-	// Perform the ray trace for this ray
-    TraceRay(
+	    // Set up final ray description
+        RayDesc ray;
+        ray.Origin = rayOrigin;
+        ray.Direction = rayDirection;
+        ray.TMin = 0.0001f;
+        ray.TMax = 1000.0f;
+
+	    // Set payload color to white by default
+        payload.color = float3(1, 1, 1);
+
+	    // Perform the ray trace for this ray
+        TraceRay(
 		SceneTLAS,
 		RAY_FLAG_NONE,
 		0xFF,
@@ -164,6 +222,9 @@ void RayGen()
 		0,
 		ray,
 		payload);
+        
+        totalColor += payload.color;
+    }
 
 	// Set the final color of the buffer (gamma corrected)
     OutputColor[rayIndices] = float4(pow(payload.color, 1.0f / 2.2f), 1);
@@ -188,6 +249,17 @@ void Miss(inout RayPayload payload)
 [shader("closesthit")]
 void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes hitAttributes)
 {
+    // (ty for this Chris) If we've reached the max recursion, we haven't hit a light source
+    if (payload.recursionDepth == 10)
+    {
+        // black if we don't hit anything
+        payload.color = float3(0, 0, 0);
+        return;
+    }
+    
+    // if we dooooo hit something, tint by that thing's surface color
+    payload.color *= entityColor[InstanceID()].rgb;
+    
 	// Grab the index of the triangle we hit
     uint triangleIndex = PrimitiveIndex();
 
@@ -203,4 +275,32 @@ void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes 
 	// Get the data for this entity
     uint instanceID = InstanceID();
     payload.color = entityColor[instanceID].rgb;
+    
+    Vertex hit = GetHitDetails(PrimitiveIndex(), hitAttributes);
+    
+    // Calc a unique RNG value for this ray, based on the "uv" of this pixel and other per-ray data
+    float3 normal_WS = normalize(mul(hit.normal, (float3x3) ObjectToWorld4x3()));
+    float2 uv = (float2) DispatchRaysIndex() / (float2) DispatchRaysDimensions();
+    float2 rng = rand2(uv * (payload.recursionDepth + 1) + payload.rayPerPixelIndex + RayTCurrent());
+    float3 randomBounce = RandomCosineWeightedHemisphere(rand(rng), rand(rng.yx), normal_WS);
+    
+    // Interpolate between perfect reflection and random bounce based on roughness
+    float3 refl = reflect(WorldRayDirection(), normal_WS);
+    float3 dir = normalize(lerp(refl, randomBounce, entityColor[InstanceID()].a));
+    
+    // Create the new recursive ray
+    RayDesc ray;
+    ray.Origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+    ray.Direction = dir;
+    ray.TMin = 0.0001f;
+    ray.TMax = 1000.0f;
+
+	// Recursive ray trace
+    payload.recursionDepth++;
+    TraceRay(
+		SceneTLAS,
+		RAY_FLAG_NONE,
+		0xFF, 0, 0, 0, // Mask and offsets
+		ray,
+		payload);
 }

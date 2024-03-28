@@ -8,7 +8,6 @@
 #include "Lights.h"
 #include "RaytracingHelper.h"
 
-
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
