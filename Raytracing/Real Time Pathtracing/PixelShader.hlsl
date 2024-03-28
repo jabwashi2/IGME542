@@ -3,6 +3,25 @@
 #include "ShaderFunctionsInclude.hlsli"
 
 #define TOTAL_LIGHTS 5
+#define myTex2DSpace space1 // thanks alex tardif <3
+
+
+struct MaterialData
+{
+    float4 color;
+    uint albedoIndex;
+    uint normalIndex;
+    uint roughIndex;
+    uint metalIndex;
+};
+
+cbuffer DrawData
+{
+    matrix world;
+    matrix view;
+    matrix proj;
+    MaterialData mat;
+}
 
 // Alignment matters!!!
 cbuffer ExternalData : register(b0)
@@ -17,11 +36,13 @@ cbuffer ExternalData : register(b0)
 // smapler for textures!
 SamplerState BasicSampler : register(s0);
 
+Texture2D texture2DTable[] : register(t0, myTex2DSpace);
+
 // textures!
-Texture2D AlbedoTexture : register(t0);
-Texture2D MetalTexture : register(t1);
-Texture2D NormalTexture : register(t2);
-Texture2D RoughTexture : register(t3);
+//Texture2D AlbedoTexture : register(t0);
+//Texture2D MetalTexture : register(t1);
+//Texture2D NormalTexture : register(t2);
+//Texture2D RoughTexture : register(t3);
 
 
 // --------------------------------------------------------
@@ -51,12 +72,12 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3x3 TBN = float3x3(T, B, N);
     
      // unpack and sample normal
-    float3 unpackedNormal = NormalTexture.Sample(BasicSampler, input.uv).rgb * 2 - 1;
+    float3 unpackedNormal = texture2DTable[normalIndex].Sample(BasicSampler, input.uv).rgb * 2 - 1;
     input.normal = normalize(mul(unpackedNormal, TBN)); 
     
-    float3 surfaceColor = pow(AlbedoTexture.Sample(BasicSampler, input.uv).rgb, 2.2f); // surfaceColor only consists of albedo texture
-    float roughness = RoughTexture.Sample(BasicSampler, input.uv).r;
-    float metalness = MetalTexture.Sample(BasicSampler, input.uv).r;
+    float3 surfaceColor = pow(texture2DTable[albedoIndex].Sample(BasicSampler, input.uv).rgb, 2.2f); // surfaceColor only consists of albedo texture
+    float roughness = texture2DTable[roughIndex].Sample(BasicSampler, input.uv).r;
+    float metalness = texture2DTable[metalIndex].Sample(BasicSampler, input.uv).r;
     float3 specularColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
     
     float3 finalColor = surfaceColor;
