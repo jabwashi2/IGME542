@@ -244,11 +244,12 @@ void Miss(inout RayPayload payload)
     float3 upColor = float3(0.3f, 0.5f, 0.95f);
     float3 downColor = float3(1, 1, 1);
 
+
 	// Interpolate based on the direction of the ray
     float interpolation = dot(normalize(WorldRayDirection()), float3(0, 1, 0)) * 0.5f + 0.5f;
     
     float3 color = lerp(downColor, upColor, interpolation);
-    //payload.color = lerp(downColor, upColor, interpolation); <-- what I was originally doing, all of the shapes were blue
+    //payload.color = lerp(downColor, upColor, interpolation);
     payload.color *= color;
 
 }
