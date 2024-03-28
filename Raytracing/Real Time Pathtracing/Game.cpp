@@ -176,7 +176,7 @@ void Game::CreateAssets()
 {
 	// don't have to access the mesh vector directly! use FindMesh() helper function
 
-	entities.push_back(std::make_shared<GameEntity>("leftCylinder", FindMesh("cylinder"), bronzeMaterial));
+	entities.push_back(std::make_shared<GameEntity>("leftCylinder", FindMesh("cylinder"), woodMaterial));
 	FindEntity("leftCylinder")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 3.0f, 0.0f));
 
 	entities.push_back(std::make_shared<GameEntity>("rightCylinder", FindMesh("cylinder"), bronzeMaterial));
@@ -186,7 +186,7 @@ void Game::CreateAssets()
 	FindEntity("centerTorus")->GetTransform()->SetPosition(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	FindEntity("centerTorus")->GetTransform()->Scale(XMFLOAT3(2.0f, 2.0f, 2.0f));
 
-	entities.push_back(std::make_shared<GameEntity>("leftHelix", FindMesh("helix"), woodMaterial));
+	entities.push_back(std::make_shared<GameEntity>("leftHelix", FindMesh("helix"), paintMaterial));
 	FindEntity("leftHelix")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 0.0f, 0.0f));
 
 	entities.push_back(std::make_shared<GameEntity>("rightHelix", FindMesh("helix"), woodMaterial));
@@ -201,7 +201,7 @@ void Game::CreateAssets()
 			sMaterial = bronzeMaterial;
 		}
 		else {
-			sMaterial = woodMaterial;
+			sMaterial = paintMaterial;
 		}
 
 		entities.push_back(std::make_shared<GameEntity>(sName, FindMesh("sphere"), sMaterial));
@@ -246,6 +246,7 @@ void Game::LoadMaterials()
 	// finalize the material
 	bronzeMaterial->FinalizeMaterial();
 
+
 	// wood
 	woodMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, .3, .3));
 
@@ -265,6 +266,27 @@ void Game::LoadMaterials()
 
 	// finalize the material
 	woodMaterial->FinalizeMaterial();
+
+
+	// paint
+	paintMaterial = std::make_shared<Material>(pipelineState, XMFLOAT3(.6, .3, .6));
+
+	{
+		// paint textures
+		D3D12_CPU_DESCRIPTOR_HANDLE pAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_albedo.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE pMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_metal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE pNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_normal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE pRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_roughness.png").c_str());
+
+		// giving textures to materials
+		paintMaterial->AddTexture(pAlbedo, 0);
+		paintMaterial->AddTexture(pMetal, 1);
+		paintMaterial->AddTexture(pNormal, 2);
+		paintMaterial->AddTexture(pRough, 3);
+	}
+
+	// finalize the material
+	paintMaterial->FinalizeMaterial();
 }
 
 void Game::CreateCamera()

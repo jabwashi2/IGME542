@@ -76,6 +76,9 @@ private:
 	// wood material
 	std::shared_ptr<Material> woodMaterial;
 
+	// paint material
+	std::shared_ptr<Material> paintMaterial;
+
 	// lights!
 	int lightCount;
 	std::vector<Light> lights;
