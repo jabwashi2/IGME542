@@ -188,7 +188,7 @@ void RayGen()
     float3 totalColor = float3(0, 0, 0);
     
     // This initializes the struct to all zeros
-    RayPayload payload = (RayPayload) 0;
+    //RayPayload payload = (RayPayload) 0;
     
     int raysPerPixel = 25;
     
@@ -210,6 +210,11 @@ void RayGen()
         ray.TMax = 1000.0f;
 
 	    // Set payload color to white by default
+        // Set up the payload for the ray
+        RayPayload payload;
+        payload.color = float3(1, 1, 1);
+        payload.recursionDepth = 0;
+        payload.rayPerPixelIndex = r;
         payload.color = float3(1, 1, 1);
 
 	    // Perform the ray trace for this ray
@@ -227,7 +232,7 @@ void RayGen()
     }
 
 	// Set the final color of the buffer (gamma corrected)
-    OutputColor[rayIndices] = float4(pow(payload.color, 1.0f / 2.2f), 1);
+    OutputColor[rayIndices] = float4(pow(totalColor / raysPerPixel, 1.0f / 2.2f), 1);
 }
 
 
