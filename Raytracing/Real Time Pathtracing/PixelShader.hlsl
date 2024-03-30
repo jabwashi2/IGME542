@@ -3,6 +3,7 @@
 #include "ShaderFunctionsInclude.hlsli"
 
 #define TOTAL_LIGHTS 5
+#define myTex2DSpace space1
 
 // Alignment matters!!!
 cbuffer ExternalData : register(b0)
@@ -13,6 +14,8 @@ cbuffer ExternalData : register(b0)
     int lightCount;
     Light lights[TOTAL_LIGHTS]; // array of lights
 }
+
+Texture2D Texture2DTable[] : register(t0, myTex2DSpace);
 
 // smapler for textures!
 SamplerState BasicSampler : register(s0);

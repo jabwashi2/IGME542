@@ -366,6 +366,23 @@ void Game::CreateRootSigAndPipelineState()
 	Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderByteCode;
 	Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderByteCode;
 
+	// texture2D set up
+	{
+		D3D12_DESCRIPTOR_RANGE texture2DRange{};
+		texture2DRange.BaseShaderRegister = 0;
+		texture2DRange.NumDescriptors = 4 ;
+		texture2DRange.OffsetInDescriptorsFromTableStart = 0;
+		texture2DRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		texture2DRange.RegisterSpace = 0;
+		//texture2DRange.RegisterSpace = myTex2DSpace;
+
+		D3D12_ROOT_PARAMETER texture2DTable{};
+		texture2DTable.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		texture2DTable.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		texture2DTable.DescriptorTable.NumDescriptorRanges = 1;
+		texture2DTable.DescriptorTable.pDescriptorRanges = &texture2DRange;
+	}
+
 	// Load shaders
 	{
 		// Read our compiled vertex shader code into a blob
