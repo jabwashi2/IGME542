@@ -428,6 +428,19 @@ void Game::CreateRootSigAndPipelineState()
 
 	// Root Signature
 	{
+		D3D12_DESCRIPTOR_RANGE texture2DRange{};
+		texture2DRange.BaseShaderRegister = 0;
+		texture2DRange.NumDescriptors = 4;
+		texture2DRange.OffsetInDescriptorsFromTableStart = 0;
+		texture2DRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		texture2DRange.RegisterSpace = 0;
+
+		D3D12_ROOT_PARAMETER texture2DTable{};
+		texture2DTable.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		texture2DTable.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		texture2DTable.DescriptorTable.NumDescriptorRanges = 1;
+		texture2DTable.DescriptorTable.pDescriptorRanges = &texture2DRange;
+
 		// Describe the range of CBVs needed for the vertex shader
 		D3D12_DESCRIPTOR_RANGE cbvRangeVS = {};
 		cbvRangeVS.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
