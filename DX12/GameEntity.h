@@ -12,7 +12,6 @@ public:
 	std::string name;
 
 	GameEntity(std::string _name, std::shared_ptr<Mesh> mesh_ptr, std::shared_ptr<Material> mtrl_ptr);
-	GameEntity(std::shared_ptr<Mesh> mesh_ptr, std::shared_ptr<Material> mtrl_ptr);
 	std::shared_ptr<Mesh> GetMesh();
 	std::shared_ptr<Material> GetMaterial();
 	// may not use this
