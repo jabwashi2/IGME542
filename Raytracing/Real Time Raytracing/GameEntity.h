@@ -9,7 +9,7 @@
 class GameEntity
 {
 public:
-	// name of this mesh
+	// name of this entity
 	std::string name;
 
 	GameEntity(std::string _name, std::shared_ptr<Mesh> mesh_ptr, std::shared_ptr<Material> mtrl_ptr);

@@ -28,14 +28,22 @@ public:
 
 
 private:
+	const int NUM_SPHERES = 10;
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
+	void LoadMeshes();
 	void CreateGeometry();
-	void CreateRootSigAndPipelineState();
+	void CreateAssets();
+
+	void LoadMaterials();
+
 	void CreateCamera();
 	void CreateLights();
-	void LoadAndCreateAssets();
-	void LoadMaterials();
+
+	void CreateRootSigAndPipelineState();
+
+	std::shared_ptr<Mesh> FindMesh(std::string meshName);
+	std::shared_ptr<GameEntity> FindEntity(std::string entityName);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -51,8 +59,11 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW vbView;
 	D3D12_INDEX_BUFFER_VIEW ibView;
 
+	// list of available meshes
+	std::vector<std::shared_ptr<Mesh>> meshes;
+
 	// entity list
-	std::vector<GameEntity> entities;
+	std::vector<std::shared_ptr<GameEntity>> entities;
 
 	std::shared_ptr<Camera> camera;
 

@@ -1,7 +1,9 @@
 #include "GameEntity.h"
 
-GameEntity::GameEntity(std::shared_ptr<Mesh> mesh_ptr, std::shared_ptr<Material> mtrl_ptr)
+GameEntity::GameEntity(std::string _name, std::shared_ptr<Mesh> mesh_ptr, std::shared_ptr<Material> mtrl_ptr)
 {
+    this->name = _name;
+
     myMesh = mesh_ptr;
     myTransform = std::make_shared<Transform>();
     myMaterial = mtrl_ptr;
