@@ -8,7 +8,6 @@
 #include "Lights.h"
 #include "RaytracingHelper.h"
 
-
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
@@ -177,15 +176,22 @@ void Game::CreateAssets()
 {
 	// don't have to access the mesh vector directly! use FindMesh() helper function
 
-	entities.push_back(std::make_shared<GameEntity>("leftCylinder", FindMesh("cylinder"), bronzeMaterial));
-	FindEntity("leftCylinder")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 3.0f, 0.0f));
+	entities.push_back(std::make_shared<GameEntity>("leftCylinder", FindMesh("cylinder"), woodMaterial));
+	FindEntity("leftCylinder")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 3.0f, 0.0f));
 
 	entities.push_back(std::make_shared<GameEntity>("rightCylinder", FindMesh("cylinder"), bronzeMaterial));
-	FindEntity("rightCylinder")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 3.0f, 0.0f));
+	FindEntity("rightCylinder")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 3.0f, 0.0f));
 
 	entities.push_back(std::make_shared<GameEntity>("centerTorus", FindMesh("torus"), bronzeMaterial));
 	FindEntity("centerTorus")->GetTransform()->SetPosition(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	FindEntity("centerTorus")->GetTransform()->Scale(XMFLOAT3(2.0f, 2.0f, 2.0f));
+
+	entities.push_back(std::make_shared<GameEntity>("leftHelix", FindMesh("helix"), paintMaterial));
+	FindEntity("leftHelix")->GetTransform()->SetPosition(XMFLOAT3(-7.0f, 0.0f, 0.0f));
+
+	entities.push_back(std::make_shared<GameEntity>("rightHelix", FindMesh("helix"), woodMaterial));
+	FindEntity("rightHelix")->GetTransform()->SetPosition(XMFLOAT3(7.0f, 0.0f, 0.0f));
+
 
 	for (int i = 0; i < NUM_SPHERES; i++) {
 		std::string sName = "sphere" + i;
@@ -195,7 +201,7 @@ void Game::CreateAssets()
 			sMaterial = bronzeMaterial;
 		}
 		else {
-			sMaterial = woodMaterial;
+			sMaterial = paintMaterial;
 		}
 
 		entities.push_back(std::make_shared<GameEntity>(sName, FindMesh("sphere"), sMaterial));
@@ -240,6 +246,7 @@ void Game::LoadMaterials()
 	// finalize the material
 	bronzeMaterial->FinalizeMaterial();
 
+
 	// wood
 	woodMaterial = std::make_shared<Material>(pipelineState, DirectX::XMFLOAT3(1, .3, .3));
 
@@ -259,6 +266,27 @@ void Game::LoadMaterials()
 
 	// finalize the material
 	woodMaterial->FinalizeMaterial();
+
+
+	// paint
+	paintMaterial = std::make_shared<Material>(pipelineState, XMFLOAT3(.6, .3, .6));
+
+	{
+		// paint textures
+		D3D12_CPU_DESCRIPTOR_HANDLE pAlbedo = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_albedo.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE pMetal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_metal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE pNormal = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_normal.png").c_str());
+		D3D12_CPU_DESCRIPTOR_HANDLE pRough = DX12Helper::GetInstance().LoadTexture(FixPath(L"../../Assets/Textures/PBR/paint_roughness.png").c_str());
+
+		// giving textures to materials
+		paintMaterial->AddTexture(pAlbedo, 0);
+		paintMaterial->AddTexture(pMetal, 1);
+		paintMaterial->AddTexture(pNormal, 2);
+		paintMaterial->AddTexture(pRough, 3);
+	}
+
+	// finalize the material
+	paintMaterial->FinalizeMaterial();
 }
 
 void Game::CreateCamera()
@@ -338,6 +366,23 @@ void Game::CreateRootSigAndPipelineState()
 	Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderByteCode;
 	Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderByteCode;
 
+	// texture2D set up
+	{
+		D3D12_DESCRIPTOR_RANGE texture2DRange{};
+		texture2DRange.BaseShaderRegister = 0;
+		texture2DRange.NumDescriptors = 4 ;
+		texture2DRange.OffsetInDescriptorsFromTableStart = 0;
+		texture2DRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		texture2DRange.RegisterSpace = 0;
+		//texture2DRange.RegisterSpace = myTex2DSpace;
+
+		D3D12_ROOT_PARAMETER texture2DTable{};
+		texture2DTable.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		texture2DTable.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		texture2DTable.DescriptorTable.NumDescriptorRanges = 1;
+		texture2DTable.DescriptorTable.pDescriptorRanges = &texture2DRange;
+	}
+
 	// Load shaders
 	{
 		// Read our compiled vertex shader code into a blob
@@ -383,6 +428,19 @@ void Game::CreateRootSigAndPipelineState()
 
 	// Root Signature
 	{
+		D3D12_DESCRIPTOR_RANGE texture2DRange{};
+		texture2DRange.BaseShaderRegister = 0;
+		texture2DRange.NumDescriptors = 4;
+		texture2DRange.OffsetInDescriptorsFromTableStart = 0;
+		texture2DRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		texture2DRange.RegisterSpace = 0;
+
+		D3D12_ROOT_PARAMETER texture2DTable{};
+		texture2DTable.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		texture2DTable.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		texture2DTable.DescriptorTable.NumDescriptorRanges = 1;
+		texture2DTable.DescriptorTable.pDescriptorRanges = &texture2DRange;
+
 		// Describe the range of CBVs needed for the vertex shader
 		D3D12_DESCRIPTOR_RANGE cbvRangeVS = {};
 		cbvRangeVS.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
@@ -574,6 +632,9 @@ void Game::Update(float deltaTime, float totalTime)
 
 	FindEntity("leftCylinder")->GetTransform()->Rotate(-2.0f * deltaTime, -2.0f * deltaTime, 0.0f);
 	FindEntity("rightCylinder")->GetTransform()->Rotate(2.0f * deltaTime, 2.0f * deltaTime, 0.0f);
+
+	FindEntity("leftHelix")->GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
+	FindEntity("rightHelix")->GetTransform()->Rotate(0.0f, 2.0f * deltaTime, 0.0f);
 
 	for (int i = 0; i < NUM_SPHERES; i++) {
 		std::string sName = "sphere" + i;
