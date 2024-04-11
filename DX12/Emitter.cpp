@@ -27,10 +27,12 @@ Emitter::Emitter(std::shared_ptr<Material> _material, int _maxParticles, float _
 	this->timeBetweenParticles = 1.0f / particlesPerSecond;
 
 	myPosition = _position;
+	myTransform->SetPosition(myPosition);
 
 	this->material = _material;
 
 	// we'll also make the GPU resources
+	CreateParticlesandBuffers();
 }
 
 Emitter::~Emitter()
@@ -81,7 +83,7 @@ void Emitter::Update(float dt, float currentTime)
 
 	// if timeSinceLastEmission > timebetweenparticles then emit
 	if (timeSinceLastEmission > timeBetweenParticles) {
-		// call emit function
+		// TODO: call emit function
 		// update timeSinceLastEmission
 		timeSinceLastEmission -= timeBetweenParticles;
 	}
@@ -89,13 +91,13 @@ void Emitter::Update(float dt, float currentTime)
 
 void Emitter::Draw()
 {
-	// clear render target
+	// TODO: clear render target
 
 
-	// render
+	// TODO: render
 
 
-	// present (dx12)
+	// TODO: present (dx12)
 
 }
 
@@ -115,5 +117,62 @@ void Emitter::SingleUpdate(float currentTime, int index)
 		// update numAlive
 		numAlive--;
 	}
+}
+
+void Emitter::Emit(float currentTime)
+{
+	// make sure there are particles left to spawn
+	if (numAlive == maxParticles)
+		return;
+
+	// set current index (start at first dead)
+	int currentIndex = firstDead;
+
+	// update spawn time
+	particles[currentIndex].emitTime = currentTime;
+
+	// TODO: apply particle transformations
+
+	// update firstDead index
+	firstDead++;
+	firstDead %= maxParticles;
+
+	// update number of living particles
+	numAlive++;
+}
+
+void Emitter::CreateParticlesandBuffers()
+{
+	// reset!
+	if (particles) {
+		delete[] particles;
+	}
+
+	// TODO: reset indexBuffer
+	// TODO: reset particleBuffer
+	// TODO: reset particle SRV
+
+	// set up particle array
+	particles = new ParticleData[maxParticles];
+
+	// TODO: create index buffer to draw particles
+	int numIndices = maxParticles * 6; // <-- from Chris; two triangles per particle
+	unsigned int* indices = new unsigned int[numIndices];
+	int indexCount = 0;
+	for (int i = 0; i < maxParticles * 4; i += 4)
+	{
+		indices[indexCount++] = i;
+		indices[indexCount++] = i + 1;
+		indices[indexCount++] = i + 2;
+		indices[indexCount++] = i;
+		indices[indexCount++] = i + 2;
+		indices[indexCount++] = i + 3;
+	}
+	// TODO: figure this out: D3D11_SUBRESOURCE_DATA indexData = {};
+	// indexData.pSysMem = indices;
+
+	// TODO: should we use DX12helper to set these up? probably
+	// TODO: set up particleBuffer
+	// TODO: set up SRV
 }
 

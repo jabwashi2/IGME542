@@ -63,21 +63,38 @@ private:
 	// emitter position
 	DirectX::XMFLOAT3 myPosition;
 
-	// GPU bugger of particles (buffer and SRV)
+	// TODO: note: for D3D12, will need to adjust these things:
+	// - particle GPU buffer
+	// - particle SRV
+	// - render state representation
+	//	- new pipeline state object
+	//	- includes blend and depth states
+	// - resource binding layout
+	//	- root sig for particle specific resources
+	 
+	// TODO: GPU buffer of particles (buffer and SRV)
 
 
-	// index buffer
+	// TODO: index buffer
+	ID3D12Resource* indexBuffer;
 
+	D3D12_INDEX_BUFFER_VIEW ibv;
 
 	// texture/material
 	std::shared_ptr<Material> material;
 
-	// shader(s)
+	// TODO: shader(s)
 
 
 	// helper methods
 
 	// updates one particle, takes index of particle and time
 	void SingleUpdate(float currentTime, int index);
+
+	// emits particles (simulation)
+	void Emit(float currentTime);
+
+	// creates particle list and buffers
+	void CreateParticlesandBuffers();
 };
 
