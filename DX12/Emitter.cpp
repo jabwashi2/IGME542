@@ -1,20 +1,42 @@
 #include "Emitter.h"
 
+/* only updates emitter related particle data
+* - number of particles
+* - age of particles
+* - position of first living and first dead particles in array
+* - particle position (emission)
+* particle specific data is updated in particle shaders :)
+*/
 
-
-Emitter::Emitter(std::shared_ptr<Material> _material, int _maxParticles, int _firstAlive, int _firstDead, int _numAlive, float _maxLifeTime, int _particlesPerSecond, int _timeBetweenParticles, int _timeSinceLastEmission)
+Emitter::Emitter(std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position)
 {
-	this->material = _material;
+	myTransform = std::make_shared<Transform>();
+
 	this->maxParticles = _maxParticles;
-	this->firstAlive = _firstAlive;
-	this->firstDead = _firstDead;
-	this->numAlive = _numAlive;
-	this->maxLifeTime = _maxLifeTime;
-	this->particlesPerSecond = _particlesPerSecond;
-	this->timeBetweenParticles = _timeBetweenParticles;
-	this->timeSinceLastEmission = _timeSinceLastEmission;
 
 	particles = {};
+
+	this->firstAlive = 0;
+	this->firstDead = 0;
+	this->numAlive = 0;
+	this->timeSinceLastEmission = 0.0f;
+
+	this->maxLifeTime = _maxLifeTime;
+
+	this->particlesPerSecond = _particlesPerSecond;
+	this->timeBetweenParticles = 1.0f / particlesPerSecond;
+
+	myPosition = _position;
+
+	this->material = _material;
+
+	// we'll also make the GPU resources
+}
+
+Emitter::~Emitter()
+{
+	// Clean up the particle array
+	delete[] particles;
 }
 
 void Emitter::Update(float dt, float currentTime)
@@ -22,21 +44,46 @@ void Emitter::Update(float dt, float currentTime)
 	// loop through the particles array
 	// 
 	// in loop:
-	// - update position (based on movement) >-- could write helper functions for movement
 	// - check age 
 	// update current first alive (index)
 	// update current first dead (index)
 
 	// do we have living particles?
 	if (numAlive > 0) {
-		for (int i = 0; i >= numAlive; i++) {
-
-			// update position
-			particles[i].position.x += 1; // replace with an actual position altering function
-
-			// update age
-
+		// if firstAlive < firstDead, no need for wrapping
+		if (firstAlive < firstDead) {
+			for (int i = firstAlive; i < firstDead; i++) {
+				SingleUpdate(currentTime, i);
+			}
 		}
+
+		// if firstAlive > firstDead, need to wrap around
+		if (firstAlive > firstDead) {
+			for (int i = firstAlive; i < maxParticles; i++) {
+				SingleUpdate(currentTime, i);
+			}
+
+			for (int i = 0; i < firstDead; i++) {
+				SingleUpdate(currentTime, i);
+			}
+		}
+
+		if (firstAlive == firstDead) {
+			for (int i = 0; i < maxParticles; i++) {
+				SingleUpdate(currentTime, i);
+			}
+		}
+	}
+
+	// emit particles!
+	// first, update timeSinceLastEmission (add dt)
+	timeSinceLastEmission += dt;
+
+	// if timeSinceLastEmission > timebetweenparticles then emit
+	if (timeSinceLastEmission > timeBetweenParticles) {
+		// call emit function
+		// update timeSinceLastEmission
+		timeSinceLastEmission -= timeBetweenParticles;
 	}
 }
 
@@ -51,3 +98,22 @@ void Emitter::Draw()
 	// present (dx12)
 
 }
+
+void Emitter::SingleUpdate(float currentTime, int index)
+{
+	// age check!
+
+	float age = currentTime - particles[index].emitTime;
+
+	if (age >= maxLifeTime) {
+		// update firstAlive
+		firstAlive++;
+
+		// wrap around
+		firstAlive %= maxParticles;
+
+		// update numAlive
+		numAlive--;
+	}
+}
+

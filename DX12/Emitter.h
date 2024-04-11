@@ -18,7 +18,9 @@ public:
 	};
 
 
-	Emitter(std::shared_ptr<Material> _material, int _maxParticles, int _firstAlive, int _firstDead, int _numAlive, float _maxLifeTime, int _particlesPerSecond, int _timeBetweenParticles, int _timeSinceLastEmission);
+	Emitter(std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position);
+
+	~Emitter();
 
 	// update method (track lifetimes, emit particles)
 	void Update(float dt, float currentTime);
@@ -58,6 +60,9 @@ private:
 	// time since last emission (float)
 	float timeSinceLastEmission;
 
+	// emitter position
+	DirectX::XMFLOAT3 myPosition;
+
 	// GPU bugger of particles (buffer and SRV)
 
 
@@ -71,6 +76,8 @@ private:
 
 
 	// helper methods
-	
+
+	// updates one particle, takes index of particle and time
+	void SingleUpdate(float currentTime, int index);
 };
 
