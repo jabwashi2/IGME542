@@ -686,7 +686,6 @@ void Game::Draw(float deltaTime, float totalTime)
 			commandList->DrawIndexedInstanced(e->GetMesh()->GetIndexCount(), 1, 0, 0, 0);
 		}
 
-
 	}
 
 	// Present

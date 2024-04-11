@@ -33,7 +33,7 @@ cbuffer ExternalData : register(b0)
     Light lights[TOTAL_LIGHTS]; // array of lights
 }
 
-Texture2D Texture2DTable[] : register(t0, myTex2DSpace);
+//Texture2D Texture2DTable[] : register(t0, myTex2DSpace);
 
 // smapler for textures!
 SamplerState BasicSampler : register(s0);
