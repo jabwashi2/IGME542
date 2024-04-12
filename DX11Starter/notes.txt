@@ -1,0 +1,46 @@
+Class Content:
+- any program that wants to talk to the OS in a window needs some OS info
+	- this is why we use WinMain
+	- hInstance: handle instance
+		- handle = number
+		- identifies our program for the OS
+
+Misc:
+- you'll really only touch the code inside of Game.cpp (or Game.h? maybe?)
+- a mesh is a shape made of one or more triangles
+- the types we'll be using are wide types (w_char, w_int, etc) because they allow for more characters to be held
+
+cams + entities made in init()
+
+//DirectX::XMFLOAT3 newScale = DirectX::XMFLOAT3(scale.x *= x, scale.y *= y, scale.z *= z);
+	//SetScale(newScale);
+
+	// making a vector with the parameters
+	DirectX::XMVECTOR scaleChange = DirectX::XMVectorSet(x, y, z, 0);
+
+	// loading scale into math vector
+	DirectX::XMVECTOR scaleVec = XMLoadFloat3(&scale);
+
+	// loading scaling into math vector
+	//DirectX::XMVECTOR scaleChangeVec = XMLoadFloat3(&scaleChange);
+
+	// math time!!
+	/*scaleVec = DirectX::XMVectorMultiply(scaleVec, scaleChange);*/
+
+	// copying value back to storage type
+	DirectX::XMStoreFloat3(&scale, DirectX::XMVectorMultiply(scaleVec, scaleChange));
+
+
+
+
+	// textures loaded before making materials
+	/*CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/chosen/gray-rocks.png").c_str(), 0, textureSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/chosen/bark-willow.png").c_str(), 0, textureSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/chosen/ganges-river.png").c_str(), 0, textureSRV.GetAddressOf());*/
+
+	 CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/chosen/gray-rocks.png").c_str(), 0,  rocksTextureSRV.GetAddressOf());
+	 CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/chosen/bark-willow.png").c_str(), 0,  barkTextureSRV.GetAddressOf());
+	 CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/chosen/ganges-river.png").c_str(), 0, riverTextureSRV.GetAddressOf());
+
+
+
