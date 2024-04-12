@@ -8,11 +8,13 @@
 * particle specific data is updated in particle shaders :)
 */
 
-Emitter::Emitter(std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position)
+Emitter::Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position)
 {
-	myTransform = std::make_shared<Transform>();
+	this->myTransform = std::make_shared<Transform>();
 
 	this->maxParticles = _maxParticles;
+
+	this->device = _device;
 
 	particles = {};
 
@@ -82,23 +84,37 @@ void Emitter::Update(float dt, float currentTime)
 	timeSinceLastEmission += dt;
 
 	// if timeSinceLastEmission > timebetweenparticles then emit
-	if (timeSinceLastEmission > timeBetweenParticles) {
-		// TODO: call emit function
+	while (timeSinceLastEmission > timeBetweenParticles) {
+		// call emit function
+		Emit(currentTime);
 		// update timeSinceLastEmission
 		timeSinceLastEmission -= timeBetweenParticles;
 	}
 }
 
-void Emitter::Draw()
+void Emitter::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
+	std::shared_ptr<Camera> camera,
+	float currentTime)
 {
-	// TODO: clear render target
+	CopyParticlesToGPU(context);
 
+	// buffer setup
+	UINT stride = 0;
+	UINT offset = 0;
+	ID3D11Buffer* nullBuffer = 0;
+	context->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
+	context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	// TODO: render
 
 
 	// TODO: present (dx12)
 
+}
+
+std::shared_ptr<Transform> Emitter::GetTransform()
+{
+	return myTransform;
 }
 
 void Emitter::SingleUpdate(float currentTime, int index)
@@ -132,6 +148,10 @@ void Emitter::Emit(float currentTime)
 	particles[currentIndex].emitTime = currentTime;
 
 	// TODO: apply particle transformations
+	particles[currentIndex].position.x += .5 * .7;
+	particles[currentIndex].position.y += .8* .7;
+	particles[currentIndex].position.z += .4 * .7;
+
 
 	// update firstDead index
 	firstDead++;
@@ -180,12 +200,10 @@ void Emitter::CreateParticlesandBuffers()
 		// TODO: rewrite for D3D12
 		// Make a dynamic buffer to hold all particle data on GPU
 		// Note: We'll be overwriting this every frame with new lifetime data
-		D3D12_BUFFER_DESC desc = {};
+		D3D11_BUFFER_DESC desc = {};
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		desc.StructureByteStride = sizeof(ParticleData);
 		desc.ByteWidth = sizeof(ParticleData) * maxParticles;
 		device->CreateBuffer(&desc, 0, particleDataBuffer.GetAddressOf());
 
@@ -198,5 +216,36 @@ void Emitter::CreateParticlesandBuffers()
 		srvDesc.Buffer.NumElements = maxParticles;
 		device->CreateShaderResourceView(particleDataBuffer.Get(), &srvDesc, particleDataSRV.GetAddressOf());
 	}
+}
+
+void Emitter::CopyParticlesToGPU(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
+{
+	// Map the buffer
+	D3D11_MAPPED_SUBRESOURCE mapped = {};
+	context->Map(particleDataBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+
+	// How are living particles arranged in the buffer?
+	if (firstAlive < firstDead)
+	{
+		// Only copy from FirstAlive -> FirstDead
+		memcpy(
+			mapped.pData, // Destination = start of particle buffer
+			particles + firstAlive, // Source = particle array, offset to first living particle
+			sizeof(ParticleData) * numAlive); // Amount = number of particles (measured in BYTES!)
+	}
+	else
+	{
+		// Copy from 0 -> FirstDead
+		memcpy(
+			mapped.pData, // Destination = start of particle buffer
+			particles, // Source = start of particle array
+			sizeof(ParticleData) * firstDead); // Amount = particles up to first dead (measured in BYTES!)
+		// ALSO copy from FirstAlive -> End
+		memcpy(
+			(void*)((ParticleData*)mapped.pData + firstDead), // Destination = particle buffer, AFTER the data we copied in previous memcpy()
+			particles + firstAlive, // Source = particle array, offset to first living particle
+			sizeof(ParticleData) * (maxParticles - firstAlive)); // Amount = number of living particles at end of array (measured in BYTES!)
+	}
+
 }
 

@@ -150,6 +150,8 @@ void Emitter::CreateParticlesandBuffers()
 	}
 
 	// TODO: reset indexBuffer
+	indexBuffer->GetGPUVirtualAddress();
+
 	// TODO: reset particleBuffer
 	// TODO: reset particle SRV
 
@@ -179,12 +181,15 @@ void Emitter::CreateParticlesandBuffers()
 	// helper variable to make things easy :)
 	DX12Helper& dx12Helper = DX12Helper::GetInstance();
 
+	// index buffer
+	dx12Helper.CreateStaticBuffer(sizeof(indices[0]), numIndices, indices);
+
 	// Structured Buffer(s) for particles
 	{
 		// TODO: rewrite for D3D12
 		// Make a dynamic buffer to hold all particle data on GPU
 		// Note: We'll be overwriting this every frame with new lifetime data
-		dx12Helper.CreateStaticBuffer(sizeof(indices[0]), numIndices, indices);
+		
 
 		// Create an SRV that points to a structured buffer of particles
 		// so we can grab this data in a vertex shader

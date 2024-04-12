@@ -2,6 +2,7 @@
 
 #include "Material.h"
 #include "Transform.h"
+#include "Camera.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -18,7 +19,7 @@ public:
 	};
 
 
-	Emitter(std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position);
+	Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position);
 
 	~Emitter();
 
@@ -26,7 +27,13 @@ public:
 	void Update(float dt, float currentTime);
 
 	// draw method (CPU->GPU copies, draw emitter)
-	void Draw();
+	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
+		std::shared_ptr<Camera> camera,
+		float currentTime);
+
+	// getters/setters
+
+	std::shared_ptr<Transform> GetTransform();
 
 private:
 
@@ -63,28 +70,18 @@ private:
 	// emitter position
 	DirectX::XMFLOAT3 myPosition;
 
-	// TODO: note: for D3D12, will need to adjust these things:
-	// - particle GPU buffer
-	// - particle SRV
-	// - render state representation
-	//	- new pipeline state object
-	//	- includes blend and depth states
-	// - resource binding layout
-	//	- root sig for particle specific resources
-	 
-	// TODO: GPU buffer of particles (buffer and SRV)
+	// device
+	Microsoft::WRL::ComPtr<ID3D11Device> device;
 
+	// GPU buffer of particles (buffer and SRV)
+	Microsoft::WRL::ComPtr<ID3D11Buffer> particleDataBuffer;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> particleDataSRV;
 
-	// TODO: index buffer
-	ID3D12Resource* indexBuffer;
-
-	D3D12_INDEX_BUFFER_VIEW ibv;
+	// index buffer
+	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 
 	// texture/material
 	std::shared_ptr<Material> material;
-
-	// TODO: shader(s)
-
 
 	// helper methods
 
@@ -96,5 +93,6 @@ private:
 
 	// creates particle list and buffers
 	void CreateParticlesandBuffers();
+	void CopyParticlesToGPU(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
 };
 
