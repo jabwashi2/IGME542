@@ -67,3 +67,29 @@ void Material::AddSampler(std::string shaderName, Microsoft::WRL::ComPtr<ID3D11S
 {
 	samplers.insert({ shaderName, sample });
 }
+
+void Material::PrepareMaterial(std::shared_ptr<Transform> transform, std::shared_ptr<Camera> camera)
+{
+	// Turn on these shaders
+	vertexShader->SetShader();
+	pixelShader->SetShader();
+
+	// Send data to the vertex shader
+	vertexShader->SetMatrix4x4("world", transform->GetWorldMatrix());
+	vertexShader->SetMatrix4x4("worldInvTrans", transform->GetWorldInvTranspose());
+	vertexShader->SetMatrix4x4("view", camera->GetView());
+	vertexShader->SetMatrix4x4("projection", camera->GetProjection());
+	vertexShader->CopyAllBufferData();
+
+	// Send data to the pixel shader
+	pixelShader->SetFloat4("colorTint", colorTint);
+	pixelShader->SetFloat("roughness", roughness);
+	pixelShader->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
+	pixelShader->SetFloat2("uvScale", XMFLOAT2(1, 1));
+	pixelShader->SetFloat2("uvOffset", XMFLOAT2(1, 1));
+	pixelShader->CopyAllBufferData();
+
+	// Loop and set any other resources
+	for (auto& t : textureSRVs) { pixelShader->SetShaderResourceView(t.first.c_str(), t.second.Get()); }
+	for (auto& s : samplers) { pixelShader->SetSamplerState(s.first.c_str(), s.second.Get()); }
+}

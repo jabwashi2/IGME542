@@ -107,6 +107,9 @@ void Game::Init()
 		device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
 	}
 
+	// make particle states
+	MakeParticleStates();
+
 	LoadMaterials();
 
 	CreateGeometry();
@@ -512,11 +515,43 @@ void Game::CreateGeometry()
 	entities[5].GetTransform()->SetPosition(XMFLOAT3(0.0f, -6.0f, 0.0f)); // move down on the y
 	entities[5].GetTransform()->Scale(XMFLOAT3(15.0f, 1.0f, 15.0f));// scale on the x and z
 
-
 	// **** emitters ****
 	sparkEmitter = std::make_shared<Emitter>(device, spark6, 50, 2.5f, 15, XMFLOAT3(-4.0f, -2.0f, 0.0f));
 	flameEmitter = std::make_shared<Emitter>(device, flame2, 40, 1.5f, 15, XMFLOAT3(0.0f, -2.0f, 0.0f));
 	smokeEmitter = std::make_shared<Emitter>(device, smoke4, 20, 3.0f, 15, XMFLOAT3(4.0f, -2.0f, 0.0f));
+}
+
+void Game::MakeParticleStates() {
+	// particle states
+	{
+		// A depth state for the particles
+		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+		dsDesc.DepthEnable = true;
+		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Turns off depth writing
+		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+		device->CreateDepthStencilState(&dsDesc, particleDepthState.GetAddressOf());
+
+		// Blend for particles (additive)
+		D3D11_BLEND_DESC blend = {};
+		blend.AlphaToCoverageEnable = false;
+		blend.IndependentBlendEnable = false;
+		blend.RenderTarget[0].BlendEnable = true;
+		blend.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blend.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // Still respect pixel shader output alpha
+		blend.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		device->CreateBlendState(&blend, particleBlendState.GetAddressOf());
+
+		// Debug rasterizer state for particles
+		D3D11_RASTERIZER_DESC rd = {};
+		rd.CullMode = D3D11_CULL_BACK;
+		rd.DepthClipEnable = true;
+		rd.FillMode = D3D11_FILL_WIREFRAME;
+		device->CreateRasterizerState(&rd, particleDebugRasterState.GetAddressOf());
+	}
 }
 
 void Game::PostProcessingSetup() { // provided by Chris
@@ -641,7 +676,6 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	const float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f }; // Cornflower Blue
 
-	// - These things should happen ONCE PER FRAME
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erases what's on the screen)
@@ -700,8 +734,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 		
 	// DRAW geometry
-	// - These steps are generally repeated for EACH object you draw
-	// - Other Direct3D calls will also be necessary to do more complex things
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
@@ -722,6 +754,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		
 	}
 
+	// drawing skybox
+	skybox->Draw(activeCam);
+
 	// drawing emitters
 	{
 		// Particle states
@@ -729,29 +764,15 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->OMSetDepthStencilState(particleDepthState.Get(), 0);		// No depth WRITING
 
 		// Draw all of the emitters
-		for (auto& e : emitters)
-		{
-			e->Draw(context, camera, totalTime);
-		}
-
-		// Should we also draw them in wireframe?
-		if (Input::GetInstance().KeyDown('C'))
-		{
-			context->RSSetState(particleDebugRasterState.Get());
-			for (auto& e : emitters)
-			{
-				e->Draw(context, camera, totalTime);
-			}
-		}
+		sparkEmitter->Draw(context, activeCam, totalTime);
+		flameEmitter->Draw(context, activeCam, totalTime);
+		smokeEmitter->Draw(context, activeCam, totalTime);
 
 		// Reset to default states for next frame
 		context->OMSetBlendState(0, 0, 0xffffffff);
 		context->OMSetDepthStencilState(0, 0);
 		context->RSSetState(0);
 	}
-
-	// drawing skybox
-	skybox->Draw(activeCam);
 
 	// post processing: post-render
 	{

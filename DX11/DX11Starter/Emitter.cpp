@@ -105,35 +105,22 @@ void Emitter::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	context->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
 	context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
+	material->PrepareMaterial(myTransform, camera);
+
 	// Vertex data
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
 	vs->SetMatrix4x4("view", camera->GetView());
 	vs->SetMatrix4x4("projection", camera->GetProjection());
-	vs->SetFloat("startSize", 1.0f);
-	vs->SetFloat("endSize", 1.5f);
+	vs->SetFloat("startSize", 2.0f);
+	vs->SetFloat("endSize", 1.0f);
 	vs->SetFloat("lifetime", maxLifeTime);
 	vs->SetFloat("currentTime", currentTime);
-
-	// will use some of these later
-	/*//vs->SetFloat3("acceleration", emitterAcceleration);
-	//vs->SetFloat4("startColor", startColor);
-	//vs->SetFloat4("endColor", endColor);
-	//vs->SetInt("constrainYAxis", constrainYAxis);
-	//vs->SetInt("spriteSheetWidth", spriteSheetWidth);
-	//vs->SetInt("spriteSheetHeight", spriteSheetHeight);
-	//vs->SetFloat("spriteSheetFrameWidth", spriteSheetFrameWidth);
-	//vs->SetFloat("spriteSheetFrameHeight", spriteSheetFrameHeight);
-	//vs->SetFloat("spriteSheetSpeedScale", spriteSheetSpeedScale);*/
 
 	vs->CopyAllBufferData();
 
 	vs->SetShaderResourceView("ParticleData", particleDataSRV);
 
-	// Now that all of our data is in the beginning of the particle buffer,
-	// we can simply draw the correct amount of living particle indices.
-	// Each particle = 4 vertices = 6 indices for a quad
 	context->DrawIndexed(numAlive * 6, 0, 0);
-
 }
 
 std::shared_ptr<Transform> Emitter::GetTransform()
@@ -192,16 +179,22 @@ void Emitter::CreateParticlesandBuffers()
 		delete[] particles;
 	}
 
-	// TODO: reset indexBuffer
-	// TODO: reset particleBuffer
-	// TODO: reset particle SRV
+	// reset indexBuffer
+	indexBuffer.Reset();
+
+	// reset particleBuffer
+	particleDataBuffer.Reset();
+
+	// reset particle SRV
+	particleDataSRV.Reset();
+
 
 	// set up particle array
 	particles = new ParticleData[maxParticles];
+	//ZeroMemory(particles, sizeof(Particle) * maxParticles);
 
-	// TODO: create index buffer to draw particles
-	int numIndices = maxParticles * 6; // <-- from Chris; two triangles per particle
-	unsigned int* indices = new unsigned int[numIndices];
+	// create index buffer to draw particles
+	unsigned int* indices = new unsigned int[maxParticles * 6];
 	int indexCount = 0;
 	for (int i = 0; i < maxParticles * 4; i += 4)
 	{
@@ -212,27 +205,33 @@ void Emitter::CreateParticlesandBuffers()
 		indices[indexCount++] = i + 2;
 		indices[indexCount++] = i + 3;
 	}
-	// TODO: figure this out: D3D11_SUBRESOURCE_DATA indexData = {};
-	// indexData.pSysMem = indices;
 
-	// TODO: should we use DX12helper to set these up? probably
-	// TODO: set up particleBuffer
-	// TODO: set up SRV
+	D3D11_SUBRESOURCE_DATA indexData = {};
+	indexData.pSysMem = indices;
 
 	// Structured Buffer(s) for particles
 	{
-		// TODO: rewrite for D3D12
+		// index buffer!
+		D3D11_BUFFER_DESC ibDesc = {};
+		ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		ibDesc.CPUAccessFlags = 0;
+		ibDesc.Usage = D3D11_USAGE_DEFAULT;
+		ibDesc.ByteWidth = sizeof(unsigned int) * maxParticles * 6;
+		device->CreateBuffer(&ibDesc, &indexData, indexBuffer.GetAddressOf());
+		delete[] indices;
+
 		// Make a dynamic buffer to hold all particle data on GPU
 		// Note: We'll be overwriting this every frame with new lifetime data
 		D3D11_BUFFER_DESC desc = {};
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		desc.StructureByteStride = sizeof(ParticleData);
 		desc.ByteWidth = sizeof(ParticleData) * maxParticles;
 		device->CreateBuffer(&desc, 0, particleDataBuffer.GetAddressOf());
 
-		// Create an SRV that points to a structured buffer of particles
-		// so we can grab this data in a vertex shader
+		// SRV!
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -245,15 +244,15 @@ void Emitter::CreateParticlesandBuffers()
 void Emitter::CopyParticlesToGPU(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 {
 	// Map the buffer
-	D3D11_MAPPED_SUBRESOURCE mapped = {};
-	context->Map(particleDataBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	context->Map(particleDataBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
 
 	// How are living particles arranged in the buffer?
 	if (firstAlive < firstDead)
 	{
 		// Only copy from FirstAlive -> FirstDead
 		memcpy(
-			mapped.pData, // Destination = start of particle buffer
+			mappedBuffer.pData, // Destination = start of particle buffer
 			particles + firstAlive, // Source = particle array, offset to first living particle
 			sizeof(ParticleData) * numAlive); // Amount = number of particles (measured in BYTES!)
 	}
@@ -261,15 +260,16 @@ void Emitter::CopyParticlesToGPU(Microsoft::WRL::ComPtr<ID3D11DeviceContext> con
 	{
 		// Copy from 0 -> FirstDead
 		memcpy(
-			mapped.pData, // Destination = start of particle buffer
+			mappedBuffer.pData, // Destination = start of particle buffer
 			particles, // Source = start of particle array
 			sizeof(ParticleData) * firstDead); // Amount = particles up to first dead (measured in BYTES!)
 		// ALSO copy from FirstAlive -> End
 		memcpy(
-			(void*)((ParticleData*)mapped.pData + firstDead), // Destination = particle buffer, AFTER the data we copied in previous memcpy()
+			(void*)((ParticleData*)mappedBuffer.pData + firstDead), // Destination = particle buffer, AFTER the data we copied in previous memcpy()
 			particles + firstAlive, // Source = particle array, offset to first living particle
 			sizeof(ParticleData) * (maxParticles - firstAlive)); // Amount = number of living particles at end of array (measured in BYTES!)
 	}
 
+	context->Unmap(particleDataBuffer.Get(), 0);
 }
 

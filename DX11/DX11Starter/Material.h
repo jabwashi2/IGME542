@@ -1,6 +1,9 @@
 #pragma once
 
 #include "SimpleShader.h"
+#include "Transform.h"
+#include "Camera.h"
+
 #include <iostream>
 #include <DirectXMath.h>
 #include <unordered_map>
@@ -12,6 +15,8 @@ public:
 	~Material();
 
 	void Setup();
+
+	void PrepareMaterial(std::shared_ptr<Transform> transform, std::shared_ptr<Camera> camera);
 
 	// **** getters ****
 	float GetRoughness();

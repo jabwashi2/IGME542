@@ -51,7 +51,7 @@ struct VertexToPixel_Particle
 {
     float4 position : SV_POSITION;
     float2 uv : TEXCOORD;
-    float4 colorTint : COLOR;
+    //float4 colorTint : COLOR;
 };
 
 struct Light

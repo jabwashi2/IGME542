@@ -62,6 +62,7 @@ private:
 	void CreateCameras();
 	void CreateGeometry();
 	void PostProcessingSetup();
+	void MakeParticleStates();
 
 	// ImGUI Helpers
 	void ImGuiHelper(float dt, std::vector<GameEntity> _entities, std::vector< std::shared_ptr<Camera>> _cameras);
