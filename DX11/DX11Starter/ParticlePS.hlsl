@@ -5,5 +5,5 @@ SamplerState BasicSampler : register(s0);
 
 float4 main(VertexToPixel_Particle input) : SV_TARGET
 {
-    return ParticleTexture.Sample(BasicSampler, input.uv) * input.colorTint;
+    return ParticleTexture.Sample(BasicSampler, input.uv); // TODO: later add color changes and other simulations
 }
