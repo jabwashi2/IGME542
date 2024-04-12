@@ -174,5 +174,29 @@ void Emitter::CreateParticlesandBuffers()
 	// TODO: should we use DX12helper to set these up? probably
 	// TODO: set up particleBuffer
 	// TODO: set up SRV
+
+	// Structured Buffer(s) for particles
+	{
+		// TODO: rewrite for D3D12
+		// Make a dynamic buffer to hold all particle data on GPU
+		// Note: We'll be overwriting this every frame with new lifetime data
+		D3D12_BUFFER_DESC desc = {};
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		desc.StructureByteStride = sizeof(ParticleData);
+		desc.ByteWidth = sizeof(ParticleData) * maxParticles;
+		device->CreateBuffer(&desc, 0, particleDataBuffer.GetAddressOf());
+
+		// Create an SRV that points to a structured buffer of particles
+		// so we can grab this data in a vertex shader
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = maxParticles;
+		device->CreateShaderResourceView(particleDataBuffer.Get(), &srvDesc, particleDataSRV.GetAddressOf());
+	}
 }
 

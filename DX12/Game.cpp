@@ -6,6 +6,7 @@
 #include "BufferStructs.h"
 #include "Camera.h"
 #include "Lights.h"
+#include "Emitter.h"
 
 
 // Needed for a helper function to load pre-compiled shader files
