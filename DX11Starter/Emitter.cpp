@@ -105,10 +105,7 @@ void Emitter::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	context->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
 	context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-	// TODO: render
 
-
-	// TODO: present (dx12)
 
 }
 
