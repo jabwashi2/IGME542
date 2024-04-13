@@ -516,9 +516,9 @@ void Game::CreateGeometry()
 	entities[5].GetTransform()->Scale(XMFLOAT3(15.0f, 1.0f, 15.0f));// scale on the x and z
 
 	// **** emitters ****
-	sparkEmitter = std::make_shared<Emitter>(device, spark6, 50, 2.5f, 20, XMFLOAT3(-4.0f, -2.0f, 0.0f));
-	flameEmitter = std::make_shared<Emitter>(device, flame2, 40, 1.5f, 20, XMFLOAT3(0.0f, -2.0f, 0.0f));
-	smokeEmitter = std::make_shared<Emitter>(device, smoke4, 20, 3.0f, 20, XMFLOAT3(4.0f, -2.0f, 0.0f));
+	sparkEmitter = std::make_shared<Emitter>(device, spark6, 50, 2.0f, 20, XMFLOAT3(-4.0f, -2.0f, 0.0f), XMFLOAT2(0.0f, 0.5f), XMFLOAT2(-10, 10), XMFLOAT2(-10, 10), XMFLOAT4(0.5f, 0.2f, 0.8f, 1.0f), XMFLOAT4(0.7f, 0.9f, 1.0f, 1.0f));
+	flameEmitter = std::make_shared<Emitter>(device, flame2, 40, 3.0f, 20, XMFLOAT3(0.0f, -2.0f, 0.0f), XMFLOAT2(-4.0f, 2.5f), XMFLOAT2(-4, 4), XMFLOAT2(-4, 4), XMFLOAT4(0.9f, 0.4f, 0.04f, 1.0f), XMFLOAT4(0.9f, 0.9f, 0.5f, 1.0f));
+	smokeEmitter = std::make_shared<Emitter>(device, smoke4, 100, 5.0f, 60, XMFLOAT3(4.0f, -2.0f, 0.0f), XMFLOAT2(0, 2.5f), XMFLOAT2(-2, 2), XMFLOAT2(-2, 2), XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f), XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f));
 }
 
 void Game::MakeParticleStates() {

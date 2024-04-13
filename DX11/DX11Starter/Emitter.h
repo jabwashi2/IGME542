@@ -3,23 +3,28 @@
 #include "Material.h"
 #include "Transform.h"
 #include "Camera.h"
+#include "Mesh.h"
 
 #include <DirectXMath.h>
 #include <memory>
 
+#define RandomRange(min, max) ((float)rand() / RAND_MAX * (max - min) + min) // thank you Chris :D
+
+// struct for a single particle
+struct ParticleData {
+
+	float emitTime;
+	DirectX::XMFLOAT3 position;
+
+	float startRotation;
+	float endRotation;
+	DirectX::XMFLOAT2 padding;
+};
+
 class Emitter
 {
 public:
-	// struct for a single particle
-	struct ParticleData {
-
-		float emitTime;
-		DirectX::XMFLOAT3 position;
-
-	};
-
-
-	Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position);
+	Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position, DirectX::XMFLOAT2 _pStartPos, DirectX::XMFLOAT2 _pStartRot, DirectX::XMFLOAT2 _pEndRot, DirectX:: XMFLOAT4 _startColor, DirectX::XMFLOAT4 _endColor);
 
 	~Emitter();
 
@@ -70,6 +75,15 @@ private:
 	// emitter position
 	DirectX::XMFLOAT3 myPosition;
 
+	// the range of start positions for particles (x is the beginning of the range, y is the end of the range)
+	DirectX::XMFLOAT2 startPosRange;
+
+	// range of start rotations for particles
+	DirectX::XMFLOAT2 startRotRange;
+
+	// range of end rotations for particles
+	DirectX::XMFLOAT2 endRotRange;
+
 	// device
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 
@@ -82,6 +96,15 @@ private:
 
 	// texture/material
 	std::shared_ptr<Material> material;
+
+	// emitter mesh
+	std::shared_ptr<Mesh> myMesh;
+
+	// start color
+	DirectX::XMFLOAT4 startColor;
+
+	// end color
+	DirectX::XMFLOAT4 endColor;
 
 	// helper methods
 

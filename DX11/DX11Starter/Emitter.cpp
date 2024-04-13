@@ -1,14 +1,6 @@
 #include "Emitter.h"
 
-/* only updates emitter related particle data
-* - number of particles
-* - age of particles
-* - position of first living and first dead particles in array
-* - particle position (emission)
-* particle specific data is updated in particle shaders :)
-*/
-
-Emitter::Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position)
+Emitter::Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<Material> _material, int _maxParticles, float _maxLifeTime, int _particlesPerSecond, DirectX::XMFLOAT3 _position, DirectX::XMFLOAT2 _pStartPos, DirectX::XMFLOAT2 _pStartRot, DirectX::XMFLOAT2 _pEndRot, DirectX::XMFLOAT4 _startColor, DirectX::XMFLOAT4 _endColor)
 {
 	this->myTransform = std::make_shared<Transform>();
 
@@ -23,15 +15,23 @@ Emitter::Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<M
 	this->numAlive = 0;
 	this->timeSinceLastEmission = 0.0f;
 
-	this->maxLifeTime = _maxLifeTime;
+	this->maxLifeTime = RandomRange(0.5, _maxLifeTime);
 
 	this->particlesPerSecond = _particlesPerSecond;
 	this->timeBetweenParticles = 1.0f / particlesPerSecond;
+
+	this->startPosRange = _pStartPos;
+	this->startRotRange = _pStartRot;
+	this->endRotRange = _pEndRot;
+
+	this->startColor = _startColor;
+	this->endColor = _endColor;
 
 	myPosition = _position;
 	myTransform->SetPosition(myPosition);
 
 	this->material = _material;
+	//this->myMesh = _mesh;
 
 	// we'll also make the GPU resources
 	CreateParticlesandBuffers();
@@ -111,10 +111,14 @@ void Emitter::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
 	vs->SetMatrix4x4("view", camera->GetView());
 	vs->SetMatrix4x4("projection", camera->GetProjection());
-	vs->SetFloat("startSize", 2.0f);
-	vs->SetFloat("endSize", 1.0f);
-	vs->SetFloat("lifetime", maxLifeTime);
 	vs->SetFloat("currentTime", currentTime);
+
+	vs->SetFloat("startSize", 2.0f);
+	vs->SetFloat("endSize", .6f);
+	vs->SetFloat("lifetime", maxLifeTime);
+
+	vs->SetFloat4("startColor", startColor);
+	vs->SetFloat4("endColor", endColor);
 
 	vs->CopyAllBufferData();
 
@@ -158,12 +162,15 @@ void Emitter::Emit(float currentTime)
 	// update spawn time
 	particles[currentIndex].emitTime = currentTime;
 
+
 	// apply particle transformations
 	particles[currentIndex].position = myPosition;
-	particles[currentIndex].position.x += .5 * .7;
-	particles[currentIndex].position.y += .8 * .7;
-	particles[currentIndex].position.z += .4 * .7;
+	particles[currentIndex].position.x += RandomRange(startPosRange.x, startPosRange.y) * RandomRange(-1.0f, 1.0f);
+	particles[currentIndex].position.y += RandomRange(startPosRange.x, startPosRange.y) * RandomRange(-1.0f, 1.0f);
+	particles[currentIndex].position.z += RandomRange(startPosRange.x, startPosRange.y) * RandomRange(-1.0f, 1.0f);
 
+	particles[currentIndex].startRotation = RandomRange(startRotRange.x, startRotRange.y);
+	particles[currentIndex].endRotation = RandomRange(endRotRange.x, endRotRange.y);
 
 	// update firstDead index
 	firstDead++;
