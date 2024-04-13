@@ -118,7 +118,7 @@ void Emitter::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 
 	vs->CopyAllBufferData();
 
-	vs->SetShaderResourceView("ParticleData", particleDataSRV);
+	vs->SetShaderResourceView("ParticleDataSB", particleDataSRV);
 
 	context->DrawIndexed(numAlive * 6, 0, 0);
 }
@@ -158,9 +158,10 @@ void Emitter::Emit(float currentTime)
 	// update spawn time
 	particles[currentIndex].emitTime = currentTime;
 
-	// TODO: apply particle transformations
+	// apply particle transformations
+	particles[currentIndex].position = myPosition;
 	particles[currentIndex].position.x += .5 * .7;
-	particles[currentIndex].position.y += .8* .7;
+	particles[currentIndex].position.y += .8 * .7;
 	particles[currentIndex].position.z += .4 * .7;
 
 
@@ -236,26 +237,6 @@ void Emitter::CreateParticlesandBuffers()
 		srvDesc.Buffer.FirstElement = 0;
 		srvDesc.Buffer.NumElements = maxParticles;
 		device->CreateShaderResourceView(particleDataBuffer.Get(), &srvDesc, particleDataSRV.GetAddressOf());
-
-		//// Set up render states for particles (since all emitters might use similar ones)
-		//D3D11_DEPTH_STENCIL_DESC particleDepthDesc = {};
-		//particleDepthDesc.DepthEnable = true; // READ from depth buffer
-		//particleDepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // No depth WRITING
-		//particleDepthDesc.DepthFunc = D3D11_COMPARISON_LESS; // Standard depth comparison
-		//device->CreateDepthStencilState(&particleDepthDesc, particleDepthState.GetAddressOf());
-
-		//// Blend state description for either additive or alpha blending (based on “additive” boolean)
-		//D3D11_BLEND_DESC additiveBlendDesc = {};
-		//additiveBlendDesc.RenderTarget[0].BlendEnable = true;
-		//additiveBlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD; // Add both colors
-		//additiveBlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD; // Add both alpha values
-		//additiveBlendDesc.RenderTarget[0].SrcBlend = additive ? D3D11_BLEND_ONE : D3D11_BLEND_SRC_ALPHA;
-		//additiveBlendDesc.RenderTarget[0].DestBlend = additive ? D3D11_BLEND_ONE : D3D11_BLEND_INV_SRC_ALPHA;
-		//additiveBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		//additiveBlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
-		//additiveBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-		//device->CreateBlendState(&additiveBlendDesc, particleBlendAdditive.GetAddressOf());
-
 	}
 }
 
