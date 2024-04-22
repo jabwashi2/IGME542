@@ -266,9 +266,9 @@ void Game::LoadMaterials()// textures and materials
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Particles/PNG (Transparent)/smoke_04.png").c_str(), 0, smokeSRV.GetAddressOf());
 
 
-	spark6 = std::make_shared<Material>(white, particlePixelShader, particleVertexShader, 1);
-	flame2 = std::make_shared<Material>(white, particlePixelShader, particleVertexShader, 1);
-	smoke4 = std::make_shared<Material>(white, particlePixelShader, particleVertexShader, 1);
+	spark6 = std::make_shared<Material>(white, particlePixelShader, particleVertexShader, 1.0f);
+	flame2 = std::make_shared<Material>(white, particlePixelShader, particleVertexShader, 1.0f);
+	smoke4 = std::make_shared<Material>(white, particlePixelShader, particleVertexShader, 1.0f);
 
 	// making emitter materials
 	spark6->AddSampler("BasicSampler", sampler);

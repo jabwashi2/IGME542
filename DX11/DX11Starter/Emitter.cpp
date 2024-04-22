@@ -15,7 +15,7 @@ Emitter::Emitter(Microsoft::WRL::ComPtr<ID3D11Device> _device, std::shared_ptr<M
 	this->numAlive = 0;
 	this->timeSinceLastEmission = 0.0f;
 
-	this->maxLifeTime = RandomRange(0.5, _maxLifeTime);
+	this->maxLifeTime = (float)RandomRange(0.5, _maxLifeTime);
 
 	this->particlesPerSecond = _particlesPerSecond;
 	this->timeBetweenParticles = 1.0f / particlesPerSecond;
