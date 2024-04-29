@@ -46,7 +46,6 @@ Game::Game(HINSTANCE hInstance)
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
 
-	editColor = XMFLOAT4(0, 0, 255, 1);
 	ambientColor = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	directionalLight1 = {}; // set all to 0, then set only necessary values
 	directionalLight2 = {}; // set all to 0, then set only necessary values
@@ -142,11 +141,6 @@ void Game::Init()
 		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
 	}
 
-	// vectors to edit
-	XMFLOAT4 color(1.0f, 0.0f, 0.5f, 1.0f);
-
-	editColor = color;
-
 	CreateCameras();
 
 	CreateShadowMap();
@@ -154,16 +148,8 @@ void Game::Init()
 	PostProcessingSetup();
 }
 
-// **** helpers ****
+#pragma region helper functions
 
-// --------------------------------------------------------
-// Loads shaders from compiled shader object (.cso) files
-// and also created the Input Layout that describes our 
-// vertex data to the rendering pipeline. 
-// - Input Layout creation is done here because it must 
-//    be verified against vertex shader byte code
-// - We'll have that byte code already loaded below
-// --------------------------------------------------------
 void Game::LoadShaders()
 {
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context,
@@ -434,9 +420,6 @@ void Game::CreateCameras()// create the cameras
 	activeCam = cameras[0];
 }
 
-// --------------------------------------------------------
-// Creates the geometry we're going to draw
-// --------------------------------------------------------
 void Game::CreateGeometry()
 {
 	XMFLOAT3 white = XMFLOAT3(1.0f, 1.0f, 1.0f);
@@ -540,8 +523,8 @@ void Game::MakeParticleStates() {
 		blend.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // Still respect pixel shader output alpha
 		blend.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 		blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+		blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;;
 		blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 		device->CreateBlendState(&blend, particleBlendState.GetAddressOf());
 
@@ -603,6 +586,9 @@ void Game::PostProcessingSetup() { // provided by Chris
 
 }
 
+#pragma endregion
+
+
 // **** game functions ****
 
 // --------------------------------------------------------
@@ -654,9 +640,6 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::Text("Framerate %f", ImGui::GetIO().Framerate);
 		ImGui::Text("Width %lu", windowWidth);
 		ImGui::Text("Height %lu", windowHeight);
-
-		ImGui::ColorEdit4("4 - component(RGBA) color editor", &editColor.x);
-
 
 		// calling ImGUI helper method
 		ImGuiHelper(deltaTime, entities, cameras);
