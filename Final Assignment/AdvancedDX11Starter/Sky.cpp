@@ -21,6 +21,10 @@ Sky::Sky(
 	this->skyVS = skyVS;
 	this->skyPS = skyPS;
 
+	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
+
 	// Init render states
 	InitRenderStates();
 
@@ -38,6 +42,10 @@ Sky::Sky(
 	device(device),
 	context(context)
 {
+	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
+
 	// Init render states
 	InitRenderStates();
 }
@@ -63,6 +71,10 @@ Sky::Sky(
 	this->samplerOptions = samplerOptions;
 	this->skyVS = skyVS;
 	this->skyPS = skyPS;
+
+	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
 
 	// Init render states
 	InitRenderStates();
@@ -92,6 +104,10 @@ Sky::Sky(
 	this->samplerOptions = samplerOptions;
 	this->skyVS = skyVS;
 	this->skyPS = skyPS;
+
+	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
 
 	// Init render states
 	InitRenderStates();
@@ -129,6 +145,26 @@ void Sky::Draw(std::shared_ptr<Camera> camera)
 	// Reset my rasterizer state to the default
 	context->RSSetState(0); // Null (or 0) puts back the defaults
 	context->OMSetDepthStencilState(0, 0);
+}
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::GetIrradianceMap()
+{
+	return irradianceIBL;
+}
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::GetSpecularMap()
+{
+	return specularIBL;
+}
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::GetBRDFLookUpTexture()
+{
+	return brdfMap;
+}
+
+int Sky::GetTotalSpecularIBLMipLevels()
+{
+	return totalSpecIBLMipLevels;
 }
 
 void Sky::InitRenderStates()
@@ -254,4 +290,19 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 
 	// Send back the SRV, which is what we need for our shaders
 	return cubeSRV;
+}
+
+void Sky::IBLCreateIrradianceMap(int cubeFaceSize)
+{
+	// TODO: finish function
+}
+
+void Sky::IBLCreateConvolvedSpecularMap(int cubeFaceSize)
+{
+	// TODO: finish function
+}
+
+void Sky::IBLCreateBRDFLookUpTexture(int textureSize)
+{
+	// TODO: finish function
 }
