@@ -295,14 +295,29 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 void Sky::IBLCreateIrradianceMap(int cubeFaceSize)
 {
 	// TODO: finish function
+	// create texture on GPU
+	// set as current render target
+	// change viewport
+	// render calculations
+	// reset rendering states
 }
 
 void Sky::IBLCreateConvolvedSpecularMap(int cubeFaceSize)
 {
 	// TODO: finish function
+	// create texture on GPU
+	// set as current render target
+	// change viewport
+	// render calculations
+	// reset rendering states
 }
 
 void Sky::IBLCreateBRDFLookUpTexture(int textureSize)
 {
 	// TODO: finish function
+	// create texture on GPU
+	// set as current render target
+	// change viewport
+	// render calculations
+	// reset rendering states
 }
