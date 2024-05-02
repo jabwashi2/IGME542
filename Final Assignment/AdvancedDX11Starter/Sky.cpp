@@ -25,9 +25,9 @@ Sky::Sky(
 	this->skyVS = skyVS;
 	this->skyPS = skyPS;
 
-	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
+	IBLCreateIrradianceMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(1024); // Use power of 2 for size: 1024 is good here
 
 	// Init render states
 	InitRenderStates();
@@ -46,9 +46,9 @@ Sky::Sky(
 	device(device),
 	context(context)
 {
-	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
+	IBLCreateIrradianceMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(1024); // Use power of 2 for size: 1024 is good here
 
 	// Init render states
 	InitRenderStates();
@@ -76,9 +76,9 @@ Sky::Sky(
 	this->skyVS = skyVS;
 	this->skyPS = skyPS;
 
-	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
+	IBLCreateIrradianceMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(1024); // Use power of 2 for size: 1024 is good here
 
 	// Init render states
 	InitRenderStates();
@@ -109,9 +109,9 @@ Sky::Sky(
 	this->skyVS = skyVS;
 	this->skyPS = skyPS;
 
-	IBLCreateIrradianceMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateConvolvedSpecularMap(); // Use power of 2 for size: 256 or 512 is good
-	IBLCreateBRDFLookUpTexture(); // Use power of 2 for size: 1024 is good here
+	IBLCreateIrradianceMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateConvolvedSpecularMap(256); // Use power of 2 for size: 256 or 512 is good
+	IBLCreateBRDFLookUpTexture(1024); // Use power of 2 for size: 1024 is good here
 
 	// Init render states
 	InitRenderStates();
@@ -341,7 +341,7 @@ void Sky::IBLCreateIrradianceMap(int cubeFaceSize)
 	context->RSSetViewports(1, &vp);
 
 	std::shared_ptr<SimpleVertexShader> fullscreenVS = LoadShader(SimpleVertexShader, L"VertexShader.cso");
-	std::shared_ptr<SimplePixelShader> irradiancePS = LoadShader(SimplePixelShader, L"IBLIrradianceMapPS");
+	std::shared_ptr<SimplePixelShader> irradiancePS = LoadShader(SimplePixelShader, L"IBLIrradianceMapPS.cso");
 
 	fullscreenVS->SetShader();
 	irradiancePS->SetShader();
@@ -411,7 +411,7 @@ void Sky::IBLCreateConvolvedSpecularMap(int cubeFaceSize)
 	context->RSSetViewports(1, &vp);
 
 	std::shared_ptr<SimpleVertexShader> fullscreenVS = LoadShader(SimpleVertexShader, L"VertexShader.cso");
-	std::shared_ptr<SimplePixelShader> specularPS = LoadShader(SimplePixelShader, L"IBLSpecularConvolutionPS");
+	std::shared_ptr<SimplePixelShader> specularPS = LoadShader(SimplePixelShader, L"IBLSpecularConvolutionPS.cso");
 
 	fullscreenVS->SetShader();
 	specularPS->SetShader();
@@ -483,4 +483,70 @@ void Sky::IBLCreateBRDFLookUpTexture(int textureSize)
 	// change viewport
 	// render calculations
 	// reset rendering states
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> brdfFinalTexture;	// Final texture once we have the full specular ibl
+
+	D3D11_TEXTURE2D_DESC texDesc = {};
+	texDesc.Width = textureSize;
+	texDesc.Height = textureSize;
+	texDesc.ArraySize = 1; // Cube map is 6 textures
+	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; // Need both!
+	texDesc.Format = DXGI_FORMAT_R16G16_UNORM;
+	texDesc.MipLevels = 1; // No mip chain needed for irradiance map. Specular will need more!
+	texDesc.MiscFlags = 0; // It's a cube map, not just an array
+	texDesc.SampleDesc.Count = 1; // Can't be zero
+	device->CreateTexture2D(&texDesc, 0, brdfFinalTexture.GetAddressOf()); // irrMapTexture is ComPtr<ID3D11Texture2D>
+
+
+	// Create an SRV for the irradiance texture
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D; // Treat this resource as a cube map
+	srvDesc.TextureCube.MipLevels = 1; // Only 1 mip level
+	srvDesc.TextureCube.MostDetailedMip = 0; // Accessing the first (and only) mip
+	srvDesc.Format = texDesc.Format; // Same format as texture
+	device->CreateShaderResourceView(brdfFinalTexture.Get(), &srvDesc, brdfMap.GetAddressOf());
+	// Save current render target and depth buffer
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> prevRTV;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> prevDSV;
+	context->OMGetRenderTargets(1, prevRTV.GetAddressOf(), prevDSV.GetAddressOf());
+
+	// set up viewport
+	unsigned int vpCount = 1;
+	D3D11_VIEWPORT prevVP = {};
+	context->RSGetViewports(&vpCount, &prevVP);
+
+	// Make sure the viewport matches the texture size
+	D3D11_VIEWPORT vp = {};
+	vp.Width = (float)textureSize;
+	vp.Height = (float)textureSize;
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &vp);
+
+	std::shared_ptr<SimpleVertexShader> fullscreenVS = LoadShader(SimpleVertexShader, L"VertexShader.cso");
+	std::shared_ptr<SimplePixelShader> brdfPS = LoadShader(SimplePixelShader, L"IBLBrdfLookupTablePS.cso");
+
+	fullscreenVS->SetShader();
+	brdfPS->SetShader();
+
+	// Make a render target view for this face
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;	// This points to a Texture2D Array
+	rtvDesc.Texture2DArray.MipSlice = 0;			// Which mip of that texture are we rendering into?
+	rtvDesc.Format = texDesc.Format;	// Same format as accum texture
+
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rtv;
+	device->CreateRenderTargetView(brdfFinalTexture.Get(), &rtvDesc, rtv.GetAddressOf());
+
+	// Clear and set this render target
+	float black[4] = {}; // Initialize to all zeroes
+	context->ClearRenderTargetView(rtv.Get(), black);
+	context->OMSetRenderTargets(1, rtv.GetAddressOf(), 0);
+
+	context->Draw(3, 0);
+
+	context->Flush();
+
+	context->OMSetRenderTargets(1, prevRTV.GetAddressOf(), prevDSV.Get());
+	context->RSSetViewports(1, &prevVP);
 }
