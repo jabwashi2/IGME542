@@ -95,7 +95,54 @@ float4 main(VertexToPixel input) : SV_TARGET
 			break;
 		}
 	}
+	
+	// Calculate requisite reflection vectors
+    float3 viewToCam = normalize(CameraPosition - input.worldPos);
+    float3 viewRefl = normalize(reflect(-viewToCam, input.normal));
+    float NdotV = saturate(dot(input.normal, viewToCam));
+	
+	// Indirect lighting
+    float3 indirectDiffuse = IndirectDiffuse(IrradianceIBLMap, BasicSampler, input.normal);
+    float3 indirectSpecular = IndirectSpecular(
+	SpecularIBLMap, SpecIBLTotalMipLevels,
+	BrdfLookUpMap, ClampSampler, // MUST use the clamp sampler here!
+	viewRefl, NdotV,
+	roughness, specColor);
+	
+	// Balance indirect diff/spec
+    float3 balancedDiff = DiffuseEnergyConserve(indirectDiffuse, specColor, metal);
+    float3 fullIndirect = indirectSpecular + balancedDiff * surfaceColor.rgb;
+	
+	// Add the indirect to the direct
+    totalColor += fullIndirect;
 
 	// Gamma correction
 	return float4(pow(totalColor, 1.0f / 2.2f), 1);
+}
+
+float3 IndirectDiffuse(TextureCube irrMap, SamplerState samp, float3 direction)
+{
+	// Sample in the specified direction - the irradiance map
+	// is a pre-computed cube map which represents light
+	// coming into this pixel from a particular hemisphere
+    float3 diff = irrMap.SampleLevel(samp, direction, 0).rgb;
+	
+    return pow(abs(diff), 2.2);
+}
+
+float3 IndirectSpecular(TextureCube envMap, int mips, Texture2D brdfLookUp, SamplerState samp,
+float3 viewRefl, float NdotV, float roughness, float3 specColor)
+{
+	// Ensure roughness isn't zero
+    roughness = max(roughness, MIN_ROUGHNESS);
+	
+	// Calculate half of the split-sum approx (this texture is not gamma-corrected, as it just holds raw data)
+    float2 indirectBRDF = brdfLookUp.Sample(samp, float2(NdotV, roughness)).rg;
+    float3 indSpecFresnel = specColor * indirectBRDF.x + indirectBRDF.y; // Spec color is f0
+	
+	// Sample the convolved environment map (other half of split-sum)
+    float3 envSample = envMap.SampleLevel(samp, viewRefl, roughness * (mips - 1)).rgb;
+	
+	// Adjust environment sample by fresnel
+    return pow(abs(envSample), 2.2) * indSpecFresnel;
 }
