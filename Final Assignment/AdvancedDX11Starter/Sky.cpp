@@ -1,8 +1,12 @@
 #include "Sky.h"
 #include "WICTextureLoader.h"
 #include "DDSTextureLoader.h"
+#include "Helpers.h"
 
 using namespace DirectX;
+
+#define LoadShader(type, file) std::make_shared<type>(device.Get(), context.Get(), FixPath(file).c_str())
+
 
 Sky::Sky(
 	const wchar_t* cubemapDDSFile, 
@@ -294,12 +298,8 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 
 void Sky::IBLCreateIrradianceMap(int cubeFaceSize)
 {
-	// TODO: finish function
-	// create texture on GPU
-	// set as current render target
-	// change viewport
-	// render calculations
-	// reset rendering states
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> irrMapTexture;
 
 	D3D11_TEXTURE2D_DESC texDesc = {};
 	texDesc.Width = cubeFaceSize;
@@ -322,15 +322,39 @@ void Sky::IBLCreateIrradianceMap(int cubeFaceSize)
 	device->CreateShaderResourceView(irrMapTexture.Get(), &srvDesc, irradianceIBL.GetAddressOf());
 	// "irradianceIBL" is ComPtr<ID3D11ShaderResourceView>
 
+	// set up viewport
+	unsigned int vpCount = 1;
+	D3D11_VIEWPORT prevVP = {};
+	context->RSGetViewports(&vpCount, &prevVP);
+
+	// Make sure the viewport matches the texture size
+	D3D11_VIEWPORT vp = {};
+	vp.Width = (float)cubeFaceSize;
+	vp.Height = (float)cubeFaceSize;
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &vp);
+
+	std::shared_ptr<SimpleVertexShader> fullscreenVS = LoadShader(SimpleVertexShader, L"VertexShader.cso");
+	std::shared_ptr<SimplePixelShader> irradiancePS = LoadShader(SimplePixelShader, L"IBLIrradianceMapPS");
+
+	fullscreenVS->SetShader();
+	irradiancePS->SetShader();
+	irradiancePS->SetShaderResourceView("EnvironmentMap", skySRV.Get());
+	irradiancePS->SetSamplerState("BasicSampler", samplerOptions.Get());
+
+	// Set states that may or may not be set yet
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	for (int i = 0; i < 6; i++) {
 		// Make a render target view for this face
 		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY; // This points to a Texture2D Array
 		rtvDesc.Texture2DArray.ArraySize = 1; // How much of the array do we want to access?
-		rtvDesc.Texture2DArray.FirstArraySlice = face; // Which array index are we rendering into? 0-5
+		rtvDesc.Texture2DArray.FirstArraySlice = i; // Which array index are we rendering into? 0-5
 		rtvDesc.Texture2DArray.MipSlice = 0; // Which mip of that texture are we rendering into?
 		rtvDesc.Format = texDesc.Format; // Same format as texture
-		ComPtr<ID3D11RenderTargetView> rtv;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rtv;
 		device->CreateRenderTargetView(irrMapTexture.Get(), &rtvDesc, rtv.GetAddressOf());
 		// Note: irrMapTexture MUST be created with D3D11_BIND_RENDER_TARGET flag or this fails!
 	}
