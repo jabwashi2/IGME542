@@ -300,6 +300,41 @@ void Sky::IBLCreateIrradianceMap(int cubeFaceSize)
 	// change viewport
 	// render calculations
 	// reset rendering states
+
+	D3D11_TEXTURE2D_DESC texDesc = {};
+	texDesc.Width = cubeFaceSize;
+	texDesc.Height = cubeFaceSize;
+	texDesc.ArraySize = 6; // Cube map is 6 textures
+	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; // Need both!
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.MipLevels = 1; // No mip chain needed for irradiance map. Specular will need more!
+	texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE; // It's a cube map, not just an array
+	texDesc.SampleDesc.Count = 1; // Can't be zero
+	device->CreateTexture2D(&texDesc, 0, irrMapTexture.GetAddressOf()); // irrMapTexture is ComPtr<ID3D11Texture2D>
+
+
+	// Create an SRV for the irradiance texture
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE; // Treat this resource as a cube map
+	srvDesc.TextureCube.MipLevels = 1; // Only 1 mip level
+	srvDesc.TextureCube.MostDetailedMip = 0; // Accessing the first (and only) mip
+	srvDesc.Format = texDesc.Format; // Same format as texture
+	device->CreateShaderResourceView(irrMapTexture.Get(), &srvDesc, irradianceIBL.GetAddressOf());
+	// "irradianceIBL" is ComPtr<ID3D11ShaderResourceView>
+
+	for (int i = 0; i < 6; i++) {
+		// Make a render target view for this face
+		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY; // This points to a Texture2D Array
+		rtvDesc.Texture2DArray.ArraySize = 1; // How much of the array do we want to access?
+		rtvDesc.Texture2DArray.FirstArraySlice = face; // Which array index are we rendering into? 0-5
+		rtvDesc.Texture2DArray.MipSlice = 0; // Which mip of that texture are we rendering into?
+		rtvDesc.Format = texDesc.Format; // Same format as texture
+		ComPtr<ID3D11RenderTargetView> rtv;
+		device->CreateRenderTargetView(irrMapTexture.Get(), &rtvDesc, rtv.GetAddressOf());
+		// Note: irrMapTexture MUST be created with D3D11_BIND_RENDER_TARGET flag or this fails!
+	}
+
 }
 
 void Sky::IBLCreateConvolvedSpecularMap(int cubeFaceSize)
