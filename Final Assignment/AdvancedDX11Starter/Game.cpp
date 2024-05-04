@@ -140,6 +140,16 @@ void Game::LoadAssetsAndCreateEntities()
 	std::shared_ptr<SimpleVertexShader> skyVS = LoadShader(SimpleVertexShader, L"SkyVS.cso");
 	std::shared_ptr<SimplePixelShader> skyPS  = LoadShader(SimplePixelShader, L"SkyPS.cso");
 
+	// Describe and create our sampler state (clamp sampler)
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&sampDesc, clampSampler.GetAddressOf());
+
 	// setting IBL values
 	pixelShader->SetShaderResourceView("IrradianceIBLMap", sky->GetIrradianceMap());
 	pixelShader->SetShaderResourceView("SpecularIBLMap", sky->GetSpecularMap());
