@@ -140,6 +140,23 @@ void Game::LoadAssetsAndCreateEntities()
 	std::shared_ptr<SimpleVertexShader> skyVS = LoadShader(SimpleVertexShader, L"SkyVS.cso");
 	std::shared_ptr<SimplePixelShader> skyPS  = LoadShader(SimplePixelShader, L"SkyPS.cso");
 
+	// Describe and create our sampler state (clamp sampler)
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&sampDesc, clampSampler.GetAddressOf());
+
+	// setting IBL values
+	pixelShader->SetShaderResourceView("IrradianceIBLMap", sky->GetIrradianceMap());
+	pixelShader->SetShaderResourceView("SpecularIBLMap", sky->GetSpecularMap());
+	pixelShader->SetShaderResourceView("BRDFMap", sky->GetBRDFLookUpTexture());
+	pixelShader->SetSamplerState("ClampSampler", clampSampler); // You’ll need to make this!
+	pixelShader->SetInt("specularIBLTotalMipLevels", sky->GetTotalSpecularIBLMipLevels());
+
 	// Make the meshes
 	std::shared_ptr<Mesh> sphereMesh = std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device);
 	std::shared_ptr<Mesh> helixMesh = std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device);
